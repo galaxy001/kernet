@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		74124BF4130D558C00DBCB9B /* control.c in Sources */ = {isa = PBXBuildFile; fileRef = 74124BF2130D558C00DBCB9B /* control.c */; };
 		743DE170130CF3400082DB4D /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 743DE16E130CF3400082DB4D /* InfoPlist.strings */; };
 		743DE173130CF3400082DB4D /* kernet.c in Sources */ = {isa = PBXBuildFile; fileRef = 743DE172130CF3400082DB4D /* kernet.c */; };
 		743DE17B130CF6A40082DB4D /* manipulator.c in Sources */ = {isa = PBXBuildFile; fileRef = 743DE179130CF6A40082DB4D /* manipulator.c */; };
@@ -14,6 +15,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		74124BF2130D558C00DBCB9B /* control.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = control.c; sourceTree = "<group>"; };
 		7421E71C130CFB3300764B9B /* 01kext-contents.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = "01kext-contents.xml"; sourceTree = "<group>"; };
 		7421E71D130CFB3300764B9B /* 01kext.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = 01kext.xml; sourceTree = "<group>"; };
 		7421E71E130CFB3300764B9B /* 02kernetloader-contents.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = "02kernetloader-contents.xml"; sourceTree = "<group>"; };
@@ -137,6 +139,7 @@
 				743DE172130CF3400082DB4D /* kernet.c */,
 				743DE179130CF6A40082DB4D /* manipulator.c */,
 				743DE17D130CF6CD0082DB4D /* kernet.h */,
+				74124BF2130D558C00DBCB9B /* control.c */,
 			);
 			path = kernet;
 			sourceTree = "<group>";
@@ -234,6 +237,7 @@
 			files = (
 				743DE173130CF3400082DB4D /* kernet.c in Sources */,
 				743DE17B130CF6A40082DB4D /* manipulator.c in Sources */,
+				74124BF4130D558C00DBCB9B /* control.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

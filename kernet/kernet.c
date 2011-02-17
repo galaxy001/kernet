@@ -36,15 +36,24 @@ OSMallocTag		gOSMallocTag;
 mbuf_tag_id_t	gidtag;
 boolean_t		gipFilterRegistered = FALSE;
 boolean_t		gsfltFilterRegistered = FALSE;
+boolean_t       gKernCtlRegistered = FALSE;
 
-TAILQ_HEAD(, ip_range_entry)                ip_range_queue;
-TAILQ_HEAD(, delayed_inject_entry)          delayed_inject_queue;
+struct master_record_t master_record;
 
-static lck_mtx_t		*gDelayedInjectQueueMutex = NULL;
-static lck_rw_t         *gipRangeQueueMutex  = NULL;
-static lck_grp_t		*gMutexGroup = NULL;
+TAILQ_HEAD(delayed_inject_queue, delayed_inject_entry);
+TAILQ_HEAD(ip_range_queue, ip_range_entry);
+
+struct ip_range_queue ip_range_queue;
+struct delayed_inject_queue delayed_inject_queue;
+
+lck_rw_t		*gMasterRecordLock = NULL;
+lck_mtx_t		*gDelayedInjectQueueMutex = NULL;
+lck_rw_t        *gipRangeQueueLock  = NULL;
+lck_grp_t		*gMutexGroup = NULL;
 
 ipfilter_t kn_ipf_ref;
+kern_ctl_ref kn_ctl_ref;
+
 static struct ipf_filter kn_ipf_filter = {
 	NULL,
 	KERNET_BUNDLEID, 
@@ -72,6 +81,20 @@ static struct sflt_filter kn_sflt_filter = {
 	NULL,
 	NULL,
 	NULL,
+};
+
+static struct kern_ctl_reg kn_ctl_reg = {
+	KERNET_BUNDLEID,
+	0,
+	0,
+	0, 
+	0,
+	(1024),
+	kn_ctl_connect_fn,
+	kn_ctl_disconnect_fn,
+	kn_ctl_send_fn,
+	kn_ctl_setopt_fn,
+	kn_ctl_getopt_fn,
 };
 
 /* As a matter of fact, I don't even bother to search for existing inet_ntoa in kernel space. I copied the following from freeBSD, I'm realy a bitch huh? */ 
@@ -235,6 +258,11 @@ errno_t	kn_mbuf_set_tag(mbuf_t *data, mbuf_tag_id_t id_tag, mbuf_tag_type_t tag_
 			kn_debug("mbuf_tag_allocate failed, status was %d\n", status);
 	}
 	return status;
+}
+
+void kn_mr_initialize()
+{
+    bzero(&master_record, sizeof(master_record));
 }
 
 errno_t kn_ip_input_fn (void *cookie, mbuf_t *data, int offset, u_int8_t protocol)
@@ -417,8 +445,8 @@ boolean_t kn_shall_apply_kernet_to_ip(u_int32_t ip)
 {
 	struct ip_range_entry *range;
 	
-    lck_rw_lock_shared(gipRangeQueueMutex);
-	TAILQ_FOREACH(range, &ip_range_queue, entries) {
+    lck_rw_lock_shared(gipRangeQueueLock);
+	TAILQ_FOREACH(range, &ip_range_queue, link) {
 		u_int32_t left = (ntohl(ip)) >> (32 - range->prefix);
 		u_int32_t right = (range->ip) >> (32 - range->prefix);
 		if (left == right) {
@@ -426,7 +454,7 @@ boolean_t kn_shall_apply_kernet_to_ip(u_int32_t ip)
 			if (range->policy == ip_range_apply_kernet) return TRUE;
 		}
 	}
-    lck_rw_unlock_shared(gipRangeQueueMutex);
+    lck_rw_unlock_shared(gipRangeQueueLock);
     
 	return FALSE;
 }
@@ -441,9 +469,9 @@ errno_t kn_append_ip_range_entry(u_int32_t ip, u_int8_t prefix, ip_range_policy 
 	range->prefix = prefix;
 	range->policy = policy;
 	
-    lck_rw_lock_exclusive(gipRangeQueueMutex);
-	TAILQ_INSERT_TAIL(&ip_range_queue, range, entries);
-    lck_rw_unlock_exclusive(gipRangeQueueMutex);
+    lck_rw_lock_exclusive(gipRangeQueueLock);
+	TAILQ_INSERT_TAIL(&ip_range_queue, range, link);
+    lck_rw_unlock_exclusive(gipRangeQueueLock);
     
     return 0;
 }
@@ -467,7 +495,7 @@ errno_t kn_delay_pkt_inject(mbuf_t pkt, u_int32_t ms, packet_direction direction
     ts.tv_sec = 0;
     ts.tv_nsec = 1000000 * ms;
     lck_mtx_lock(gDelayedInjectQueueMutex);
-    TAILQ_INSERT_TAIL(&delayed_inject_queue, entry, entries);
+    TAILQ_INSERT_TAIL(&delayed_inject_queue, entry, link);
     lck_mtx_unlock(gDelayedInjectQueueMutex);
     
     bsd_timeout(kn_delayed_inject_timeout, (void*)entry, &ts);
@@ -486,7 +514,7 @@ boolean_t kn_delayed_inject_entry_in_queue(struct delayed_inject_entry* entry)
     struct delayed_inject_entry* enum_entry;
     boolean_t ret = FALSE;
     
-    TAILQ_FOREACH(enum_entry, &delayed_inject_queue, entries) {
+    TAILQ_FOREACH(enum_entry, &delayed_inject_queue, link) {
         if (enum_entry == entry) {
             ret = TRUE;
             goto END;
@@ -559,8 +587,8 @@ errno_t kn_alloc_locks()
 	
 	if (result == 0)
 	{
-		gipRangeQueueMutex = lck_rw_alloc_init(gMutexGroup, LCK_ATTR_NULL);
-		if (gipRangeQueueMutex == NULL)
+		gipRangeQueueLock = lck_rw_alloc_init(gMutexGroup, LCK_ATTR_NULL);
+		if (gipRangeQueueLock == NULL)
 		{
 			kn_debug("lck_mtx_alloc_init returned error\n");
 			result = ENOMEM;
@@ -573,6 +601,15 @@ errno_t kn_alloc_locks()
                 kn_debug("lck_mtx_alloc_init returned error\n");
                 result = ENOMEM;
             }
+            if (result == 0)
+            {
+                gMasterRecordLock = lck_rw_alloc_init(gMutexGroup, LCK_ATTR_NULL);
+                if (gMasterRecordLock == NULL)
+                {
+                    kn_debug("lck_mtx_alloc_init returned error\n");
+                    result = ENOMEM;
+                }
+            }
 		}
 	}
 	
@@ -580,16 +617,21 @@ errno_t kn_alloc_locks()
 }
 errno_t kn_free_locks()
 {	
- 	if (gipRangeQueueMutex)
+ 	if (gipRangeQueueLock)
 	{
-		lck_rw_free(gipRangeQueueMutex, gMutexGroup);
-		gipRangeQueueMutex = NULL;
+		lck_rw_free(gipRangeQueueLock, gMutexGroup);
+		gipRangeQueueLock = NULL;
 	}
 	if (gDelayedInjectQueueMutex)
 	{
 		lck_mtx_free(gDelayedInjectQueueMutex, gMutexGroup);
 		gDelayedInjectQueueMutex = NULL;
 	}
+    if (gMasterRecordLock) 
+    {
+        lck_rw_free(gMasterRecordLock, gMutexGroup);
+        gMasterRecordLock = NULL;
+    }
     if (gMutexGroup) {
         lck_grp_free(gMutexGroup);
         gMutexGroup = NULL;
@@ -608,7 +650,7 @@ errno_t kn_free_queues()
     void *entry = NULL;
     
     while ((entry = TAILQ_FIRST(&ip_range_queue))) {
-		TAILQ_REMOVE(&ip_range_queue, (struct ip_range_entry*)entry, entries);
+		TAILQ_REMOVE(&ip_range_queue, (struct ip_range_entry*)entry, link);
 		OSFree(entry, sizeof(struct ip_range_entry), gOSMallocTag);
 	}
     return 0;
@@ -630,6 +672,8 @@ kern_return_t com_ccp0101_kext_kernet_start (kmod_info_t * ki, void * d) {
     if (kn_alloc_queues() != 0) {
         goto WTF;
     }
+    
+    kn_mr_initialize();
     
     retval = kn_alloc_locks();
     if (retval != 0)
@@ -665,6 +709,17 @@ kern_return_t com_ccp0101_kext_kernet_start (kmod_info_t * ki, void * d) {
 		gsfltFilterRegistered = TRUE;
 	}
 	
+    retval = ctl_register(&kn_ctl_reg, &kn_ctl_ref);
+	if (retval == 0) {
+		kn_debug("ctl_register id 0x%x, ref 0x%x \n", kn_ctl_reg.ctl_id, kn_ctl_ref);
+		gKernCtlRegistered = TRUE;
+	}
+	else
+	{
+		kn_debug("ctl_register returned error %d\n", retval);
+		goto WTF;
+	}
+    
 	kn_debug("extension has been loaded.\n");
     return KERN_SUCCESS;
 	
@@ -678,6 +733,11 @@ WTF:
 		ipf_remove(kn_ipf_ref);
 		gipFilterRegistered = FALSE;
 	}
+    
+    if (gKernCtlRegistered == TRUE) {
+        retval = ctl_deregister(kn_ctl_ref);
+        gKernCtlRegistered = FALSE;
+    }
     
     kn_free_locks();
     
@@ -711,6 +771,11 @@ kern_return_t com_ccp0101_kext_kernet_stop (kmod_info_t * ki, void * d) {
 			goto WTF;
 		}
 	}
+    
+    if (gKernCtlRegistered == TRUE) {
+        retval = ctl_deregister(kn_ctl_ref);
+        gKernCtlRegistered = FALSE;
+    }
     
     kn_free_queues();
     kn_free_locks();

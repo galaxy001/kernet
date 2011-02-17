@@ -7,6 +7,16 @@
 #define ETHHDR_LEN 14
 #define MIN_HTTP_REQUEST_LEN 14
 #define kMY_TAG_TYPE 1
+#define CTL_MAGIC_WORD 0x012A7715
+
+#define CTL_OPT_APPEND_IP_RANGE 0x10
+
+/* CTL general */
+#define E_OKAY 1
+#define E_PROGMA 9
+#define E_UNKNOWN_OPT 10
+/* CTL_OPT_APPEND_IP_RANGE : kn_append_ip_range_entry */
+#define E_ALREADY_EXIST 11
 
 struct dnshdr
 {
@@ -32,7 +42,7 @@ struct ip_range_entry {
 	u_int8_t	prefix;
 	ip_range_policy	policy;
 	
-	TAILQ_ENTRY(ip_range_entry) entries;
+	TAILQ_ENTRY(ip_range_entry) link;
 };
 
 struct delayed_inject_entry {
@@ -40,11 +50,29 @@ struct delayed_inject_entry {
     struct timeval timestamp;
     u_int32_t timeout; 
     packet_direction direction;
-    TAILQ_ENTRY(delayed_inject_entry) entries;
+    TAILQ_ENTRY(delayed_inject_entry) link;
+};
+
+struct control_block_t {						
+	kern_ctl_ref		ref;		// control reference to the connected process
+	u_int32_t			unit;		// unit number associated with the connected process
+	boolean_t			connected;
+    TAILQ_ENTRY(control_block)  link;
+};
+
+struct master_record_t {
+    struct control_block_t *cb;
 };
 
 extern ipfilter_t kn_ipf_ref;
 extern mbuf_tag_id_t gidtag;
+extern kern_ctl_ref gctl_ref;
+extern OSMallocTag gOSMallocTag;
+extern lck_rw_t *gMasterRecordLock;
+
+extern struct ip_range_queue ip_range_queue;
+extern struct delayed_inject_queue delayed_inject_queue;
+extern struct master_record_t master_record;
 
 // utils:
 char* kn_inet_ntoa(u_int32_t ina);
@@ -53,6 +81,18 @@ u_int16_t kn_tcp_sum_calc(u_int16_t len_tcp, u_int16_t src_addr[],u_int16_t dest
 boolean_t kn_mbuf_check_tag(mbuf_t *m, mbuf_tag_id_t module_id, mbuf_tag_type_t tag_type, packet_direction value);
 errno_t	kn_mbuf_set_tag(mbuf_t *data, mbuf_tag_id_t id_tag, mbuf_tag_type_t tag_type, packet_direction value);
 errno_t kn_prepend_mbuf_hdr(mbuf_t *data, size_t pkt_len);
+
+// master record operations:
+void kn_mr_initialize();
+
+// control socket operations:
+errno_t kn_ctl_connect_fn(kern_ctl_ref kctlref, struct sockaddr_ctl *sac, void **unitinfo);
+errno_t kn_ctl_disconnect_fn(kern_ctl_ref kctlref, u_int32_t unit, void *unitinfo);  
+errno_t kn_ctl_getopt_fn(kern_ctl_ref kctlref, u_int32_t unit, void *unitinfo, int opt, void *data, size_t *len);  
+errno_t kn_ctl_send_fn(kern_ctl_ref kctlref, u_int32_t unit, void *unitinfo, mbuf_t m, int flags);
+errno_t kn_ctl_setopt_fn(kern_ctl_ref kctlref, u_int32_t unit, void *unitinfo, int opt, void *data, size_t len);
+errno_t kn_ctl_parse_request(mbuf_t data);
+errno_t kn_ctl_send_response(u_int32_t req_id, u_int8_t opt_code, u_int32_t status);
 
 // ip filter callbacks: 
 errno_t kn_ip_input_fn (void *cookie, mbuf_t *data, int offset, u_int8_t protocol);
@@ -81,6 +121,7 @@ errno_t kn_inject_after_http (mbuf_t otgn_data);
 errno_t kn_tcp_pkt_from_params(mbuf_t *data, u_int8_t tcph_flags, u_int32_t iph_saddr, u_int32_t iph_daddr, u_int16_t tcph_sport, u_int16_t tcph_dport, u_int32_t tcph_seq, u_int32_t tcph_ack, const char* payload, size_t payload_len);
 errno_t kn_inject_tcp_from_params(u_int8_t tcph_flags, u_int32_t iph_saddr, u_int32_t iph_daddr, u_int16_t tcph_sport, u_int16_t tcph_dport, u_int32_t tcph_seq, u_int32_t tcph_ack, const char* payload, size_t payload_len, packet_direction direction);
 
+// resource alloc/dealloc:
 errno_t kn_alloc_locks();
 errno_t kn_free_locks();
 errno_t kn_alloc_queues();

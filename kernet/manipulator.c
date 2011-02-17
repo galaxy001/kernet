@@ -1,12 +1,3 @@
-/*
- *  scholarzhang.c
- *  kernet
- *
- *  Created by Mike Chen on 2/13/11.
- *  Copyright 2011 __MyCompanyName__. All rights reserved.
- *
- */
-
 #include <mach/mach_types.h>
 #include <mach/vm_types.h>
 #include <sys/systm.h>
