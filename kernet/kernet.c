@@ -37,9 +37,12 @@ static mbuf_tag_id_t	gidtag;
 static boolean_t		gipFilterRegistered = FALSE;
 static boolean_t		gsfltFilterRegistered = FALSE;
 
-TAILQ_HEAD(, ip_range_entry) ip_range_queue;
+TAILQ_HEAD(, ip_range_entry)                ip_range_queue;
+TAILQ_HEAD(, delayed_inject_entry)          delayed_inject_queue;
 
-//static lck_mtx_t		*gSwallowQueueMutex = NULL;
+static lck_mtx_t		*gDelayedInjectQueueMutex = NULL;
+static lck_rw_t         *gipRangeQueueMutex  = NULL;
+static lck_grp_t		*gMutexGroup = NULL;
 
 ipfilter_t kn_ipf_ref;
 static struct ipf_filter kn_ipf_filter = {
@@ -214,13 +217,12 @@ errno_t kn_ip_input_fn (void *cookie, mbuf_t *data, int offset, u_int8_t protoco
 			addr = iph->ip_src.s_addr;
 			kn_debug("ACK+SYN packet from %s\n", kn_inet_ntoa(addr));
 			if (kn_shall_apply_kernet_to_ip(addr) == TRUE) {
-				retval = kn_inject_after_synack(*data);
+                //	retval = kn_inject_after_synack(*data);
 			}
 			else {
 			}
 		}
 	}
-	
 	
 	return KERN_SUCCESS;
 }
@@ -230,6 +232,7 @@ errno_t kn_ip_output_fn (void *cookie, mbuf_t *data, ipf_pktopts_t options)
 	struct ip *iph;
 	struct tcphdr* tcph;
 	char *payload;
+    u_int32_t min_len;
 	errno_t retval = 0;
 	
 	if (mbuf_len(*data) < sizeof(struct ip) + sizeof(struct tcphdr) + MIN_HTTP_REQUEST_LEN) {
@@ -251,7 +254,9 @@ errno_t kn_ip_output_fn (void *cookie, mbuf_t *data, ipf_pktopts_t options)
 		}
 		
 		tcph = (struct tcphdr*)((char*)iph + iph->ip_hl * 4);
-		if (ntohs(iph->ip_len) < (iph->ip_hl * 4 + tcph->th_off * 4 + MIN_HTTP_REQUEST_LEN)) {
+        min_len = (iph->ip_hl * 4  + tcph->th_off * 4 + MIN_HTTP_REQUEST_LEN);
+        kn_debug("min_len %u\tip_len %u\n", min_len, ntohs(iph->ip_len));
+		if (ntohs(iph->ip_len) < min_len) {
 			kn_debug("to %s, data length not enough\n", kn_inet_ntoa(iph->ip_dst.s_addr));
 			return KERN_SUCCESS;
 		}
@@ -259,8 +264,9 @@ errno_t kn_ip_output_fn (void *cookie, mbuf_t *data, ipf_pktopts_t options)
 		payload = (char*)tcph + tcph->th_off;
         
 		if (memcmp(payload, "GET", 3) == 0 || memcmp(payload, "POST", 4)) {
-			//kn_debug("GET or POST to %s\n", kn_inet_ntoa(iph->ip_dst.s_addr));
-			//retval = kn_inject_after_http(*data);
+			kn_debug("GET or POST to %s\n", kn_inet_ntoa(iph->ip_dst.s_addr));
+			retval = kn_inject_after_http(*data);
+            return EJUSTRETURN;
 		}
 	}
 	
@@ -286,7 +292,7 @@ void kn_sflt_notify_fn (void *cookie, socket_t so, sflt_event_t event, void *par
 	if (event == sock_evt_connected) {
 		kn_debug("notified that so 0x%X has connected.\n", so);
 		//		kn_inject_kernet_from_so(so);
-		//		sflt_detach(so, KERNET_HANDLE); // should raise progma error, should have been already detached! 
+        //sflt_detach(so, KERNET_HANDLE);
 	}
 }
 
@@ -308,11 +314,7 @@ errno_t kn_sflt_connect_in_fn (void *cookie, socket_t so, const struct sockaddr 
 
 errno_t kn_sflt_connect_out_fn (void *cookie, socket_t so, const struct sockaddr *to)
 {
-	kn_debug("notified that so 0x%X attemps to connect to %s:%d\n", so, kn_inet_ntoa(((struct sockaddr_in*)to)->sin_addr.s_addr), htons(((struct sockaddr_in*)to)->sin_port));
-	
-	if (kn_shall_apply_kernet_to_ip(((struct sockaddr_in*)to)->sin_addr.s_addr) == FALSE) {
-		sflt_detach(so, KERNET_HANDLE);
-	}
+    sflt_detach(so, KERNET_HANDLE);
 	return KERN_SUCCESS;
 }
 
@@ -320,6 +322,7 @@ boolean_t kn_shall_apply_kernet_to_ip(u_int32_t ip)
 {
 	struct ip_range_entry *range;
 	
+    lck_rw_lock_shared(gipRangeQueueMutex);
 	TAILQ_FOREACH(range, &ip_range_queue, entries) {
 		u_int32_t left = (ntohl(ip)) >> (32 - range->prefix);
 		u_int32_t right = (range->ip) >> (32 - range->prefix);
@@ -328,60 +331,193 @@ boolean_t kn_shall_apply_kernet_to_ip(u_int32_t ip)
 			if (range->policy == ip_range_apply_kernet) return TRUE;
 		}
 	}
-	
+    lck_rw_unlock_shared(gipRangeQueueMutex);
+    
 	return FALSE;
 }
 
 errno_t kn_append_ip_range_entry(u_int32_t ip, u_int8_t prefix, ip_range_policy policy)
 {
+    
 	struct ip_range_entry *range = (struct ip_range_entry*)OSMalloc(sizeof(struct ip_range_entry), gOSMallocTag);
-	if (range == NULL) return -1;
+	if (range == NULL) return ENOMEM;
 	
 	range->ip = ip;
 	range->prefix = prefix;
 	range->policy = policy;
 	
+    lck_rw_lock_exclusive(gipRangeQueueMutex);
 	TAILQ_INSERT_TAIL(&ip_range_queue, range, entries);
-	
+    lck_rw_unlock_exclusive(gipRangeQueueMutex);
+    
     return 0;
 }
 
-void kn_fulfill_ip_ranges()
+errno_t kn_delay_pkt_inject(mbuf_t pkt, u_int32_t ms, inject_direction direction)
 {
-	// Google
-	kn_append_ip_range_entry((67305984), 24, ip_range_apply_kernet);   //	4.3.2.0/24
-	kn_append_ip_range_entry((134623232), 24, ip_range_apply_kernet);  //	8.6.48.0/21
-	kn_append_ip_range_entry((134743040), 24, ip_range_apply_kernet);  //	8.8.4.0/24
-	kn_append_ip_range_entry((134744064), 24, ip_range_apply_kernet);  //	8.8.8.0/24
-	kn_append_ip_range_entry((1078218752), 21, ip_range_apply_kernet); //	64.68.80.0/21
-	kn_append_ip_range_entry((1078220800), 21, ip_range_apply_kernet); //	64.68.88.0/21
-	kn_append_ip_range_entry((1089052672), 19, ip_range_apply_kernet); //	64.233.160.0/19
-	kn_append_ip_range_entry((1113980928), 20, ip_range_apply_kernet); //	66.102.0.0/20
-	kn_append_ip_range_entry((1123631104), 19, ip_range_apply_kernet); //	66.249.64.0/19
-	kn_append_ip_range_entry((1208926208), 18, ip_range_apply_kernet); //	72.14.192.0/18
-	kn_append_ip_range_entry((1249705984), 16, ip_range_apply_kernet); //	74.125.0.0/16
-	kn_append_ip_range_entry((2915172352), 16, ip_range_apply_kernet); //	173.194.0.0/16
-	kn_append_ip_range_entry((3512041472), 17, ip_range_apply_kernet); //	209.85.128.0/17
-	kn_append_ip_range_entry((3639549952), 19, ip_range_apply_kernet); //	216.239.32.0/19
-	
-	// Wikipedia
-	kn_append_ip_range_entry((3494942720), 22, ip_range_apply_kernet); //	208.80.152.0/22
-	
-	// Pornhub
-	kn_append_ip_range_entry((2454899747), 32, ip_range_apply_kernet); //	146.82.204.35/32
-	
-	// Just-Ping
-	kn_append_ip_range_entry((1161540560), 32, ip_range_apply_kernet);	//	69.59.179.208/32
-	
-	// Dropbox
-	kn_append_ip_range_entry((3492530741), 32, ip_range_apply_kernet);	//	208.43.202.53/32
-	kn_append_ip_range_entry((2921607977), 32, ip_range_apply_kernet);	//	174.36.51.41/32
-	
-	// Twitter
-	kn_append_ip_range_entry((2163406116), 32, ip_range_apply_kernet); //	128.242.245.36/32
+    struct delayed_inject_entry* entry;
+    errno_t retval = 0;
+    struct timespec ts;
     
-    kn_append_ip_range_entry((2916408726), 32, ip_range_apply_kernet); //	173.212.221.150
+    entry = (struct delayed_inject_entry*)OSMalloc(sizeof(struct delayed_inject_entry), gOSMallocTag);
+    if (entry == NULL) {
+        return ENOMEM;
+    }
     
+    entry->pkt = pkt;
+    entry->timeout = ms;
+    entry->direction = direction;
+    microtime(&entry->timestamp);
+    
+    ts.tv_sec = 0;
+    ts.tv_nsec = 1000 * ms;
+    lck_mtx_lock(gDelayedInjectQueueMutex);
+    TAILQ_INSERT_TAIL(&delayed_inject_queue, entry, entries);
+    lck_mtx_unlock(gDelayedInjectQueueMutex);
+    
+    bsd_timeout(kn_delayed_inject_timeout, (void*)entry, &ts);
+    
+    kn_debug("kn_delay_pkt_inject put packet in queue.\n");
+    
+    return retval;
+    
+FAILTURE:
+    OSFree(entry, sizeof(struct delayed_inject_entry), gOSMallocTag);
+    
+    return retval;
+}
+boolean_t kn_delayed_inject_entry_in_queue(struct delayed_inject_entry* entry)
+{
+    struct delayed_inject_entry* enum_entry;
+    boolean_t ret = FALSE;
+    
+    TAILQ_FOREACH(enum_entry, &delayed_inject_queue, entries) {
+        if (enum_entry == entry) {
+            ret = TRUE;
+            goto END;
+        }
+    }
+    
+END:
+    return ret;
+}
+void kn_delayed_inject_timeout(void* param) 
+{
+    struct delayed_inject_entry* entry = param;
+    mbuf_t pkt;
+    struct timeval tv_now, tv_diff;
+    int ms_diff;
+    errno_t retval = 0;
+    
+    kn_debug("kn_delayed_inject_timeout\n");
+    
+    lck_mtx_lock(gDelayedInjectQueueMutex);
+    
+    if (kn_delayed_inject_entry_in_queue(entry) == FALSE) {
+        goto END;
+    }
+    
+    pkt = entry->pkt;
+    microtime(&tv_now);
+    
+    timersub(&tv_now, &entry->timestamp, &tv_diff);
+    ms_diff = tv_diff.tv_sec * 1000 + tv_diff.tv_usec / 1000;
+    kn_debug("tv_diff.tv_usec %d\n", tv_diff.tv_usec);
+    
+    if (entry->direction == outgoing_direction) {
+        retval = ipf_inject_output(pkt, kn_ipf_ref, NULL);
+    } 
+    else if (entry->direction == incoming_direction) {
+        retval = ipf_inject_input(pkt, kn_ipf_ref);
+    }
+    else {
+        mbuf_free(pkt);
+        kn_debug("unknown delayed inject direction\n");
+        goto FREE_AND_END;
+    }
+	if (retval != 0) {
+		kn_debug("%ums delayed ipf_inject_output returned error %d\n", ms_diff, retval);
+        goto FREE_AND_END;
+    }
+	else {
+		kn_debug("injected tcp packet after %dms\n", ms_diff);
+        goto FREE_AND_END;
+	}
+FREE_AND_END:
+    OSFree(entry, sizeof(struct delayed_inject_entry), gOSMallocTag);
+    goto END;
+    
+END:
+    lck_mtx_unlock(gDelayedInjectQueueMutex);
+    return;
+}
+
+errno_t kn_alloc_locks()
+{
+	errno_t			result = 0;
+	
+	gMutexGroup = lck_grp_alloc_init(KERNET_BUNDLEID, LCK_GRP_ATTR_NULL);
+	if (gMutexGroup == NULL)
+	{
+		kn_debug("lck_grp_alloc_init returned error\n");
+		result = ENOMEM;
+	}
+	
+	if (result == 0)
+	{
+		gipRangeQueueMutex = lck_rw_alloc_init(gMutexGroup, LCK_ATTR_NULL);
+		if (gipRangeQueueMutex == NULL)
+		{
+			kn_debug("lck_mtx_alloc_init returned error\n");
+			result = ENOMEM;
+		}
+		if (result == 0)
+		{
+            gDelayedInjectQueueMutex = lck_mtx_alloc_init(gMutexGroup, LCK_ATTR_NULL);
+            if (gDelayedInjectQueueMutex == NULL)
+            {
+                kn_debug("lck_mtx_alloc_init returned error\n");
+                result = ENOMEM;
+            }
+		}
+	}
+	
+	return result;	// if we make it here, return success
+}
+errno_t kn_free_locks()
+{	
+ 	if (gipRangeQueueMutex)
+	{
+		lck_rw_free(gipRangeQueueMutex, gMutexGroup);
+		gipRangeQueueMutex = NULL;
+	}
+	if (gDelayedInjectQueueMutex)
+	{
+		lck_mtx_free(gDelayedInjectQueueMutex, gMutexGroup);
+		gDelayedInjectQueueMutex = NULL;
+	}
+    if (gMutexGroup) {
+        lck_grp_free(gMutexGroup);
+        gMutexGroup = NULL;
+    }
+    return 0;
+}
+errno_t kn_alloc_queues() 
+{
+    TAILQ_INIT(&ip_range_queue);
+    TAILQ_INIT(&delayed_inject_queue);
+	kn_fulfill_ip_ranges();
+    return 0;
+}
+errno_t kn_free_queues()
+{
+    void *entry = NULL;
+    
+    while ((entry = TAILQ_FIRST(&ip_range_queue))) {
+		TAILQ_REMOVE(&ip_range_queue, (struct ip_range_entry*)entry, entries);
+		OSFree(entry, sizeof(struct ip_range_entry), gOSMallocTag);
+	}
+    return 0;
 }
 
 kern_return_t com_ccp0101_kext_kernet_start (kmod_info_t * ki, void * d) {
@@ -391,11 +527,23 @@ kern_return_t com_ccp0101_kext_kernet_start (kmod_info_t * ki, void * d) {
 	gOSMallocTag = OSMalloc_Tagalloc(KERNET_BUNDLEID, OSMT_DEFAULT); // don't want the flag set to OSMT_PAGEABLE since
 	// it would indicate that the memory was pageable.
 	if (gOSMallocTag == NULL)
-		goto WTF;	
+        goto WTF;	
 	
-	TAILQ_INIT(&ip_range_queue);
-	kn_fulfill_ip_ranges();
-	
+    if (kn_alloc_locks() != 0) {
+        goto WTF;
+    }
+    
+    if (kn_alloc_queues() != 0) {
+        goto WTF;
+    }
+    
+    retval = kn_alloc_locks();
+    if (retval != 0)
+	{
+		kn_debug("kn_alloc_locks returned error %d\n", retval);
+		goto WTF;
+	}
+    
 	retval = mbuf_tag_id_find(KERNET_BUNDLEID , &gidtag);
 	if (retval != 0)
 	{
@@ -436,6 +584,14 @@ WTF:
 		ipf_remove(kn_ipf_ref);
 		gipFilterRegistered = FALSE;
 	}
+    
+    kn_free_locks();
+    
+    if (gOSMallocTag)
+    {
+        OSMalloc_Tagfree(gOSMallocTag);
+        gOSMallocTag = NULL;
+    }
 	
 	kn_debug("extension failed to start.\n");
 	return KERN_FAILURE;
@@ -445,14 +601,8 @@ WTF:
 kern_return_t com_ccp0101_kext_kernet_stop (kmod_info_t * ki, void * d) {
 	
 	int retval = 0;
-	struct ip_range_entry *range;
-	
-	while ((range = TAILQ_FIRST(&ip_range_queue))) {
-		TAILQ_REMOVE(&ip_range_queue, range, entries);
-		OSFree(range, sizeof(struct ip_range_entry), gOSMallocTag);
-	}
-	
-	if (gsfltFilterRegistered == TRUE) {
+    
+    if (gsfltFilterRegistered == TRUE) {
 		retval = sflt_unregister(KERNET_HANDLE);
 		if (retval != 0) {
 			kn_debug("sflt_unreturned error %d\n", retval);
@@ -467,7 +617,16 @@ kern_return_t com_ccp0101_kext_kernet_stop (kmod_info_t * ki, void * d) {
 			goto WTF;
 		}
 	}
-	
+    
+    kn_free_queues();
+    kn_free_locks();
+    
+    if (gOSMallocTag)
+    {
+        OSMalloc_Tagfree(gOSMallocTag);
+        gOSMallocTag = NULL;
+    }
+    
 	kn_debug("extension has been unloaded.\n");
     return KERN_SUCCESS;
 	
@@ -475,4 +634,3 @@ WTF:
 	kn_debug("extension failed to stop.\n");
 	return KERN_FAILURE;
 }
-

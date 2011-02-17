@@ -21,12 +21,25 @@ typedef enum _ip_range_policy {
 	ip_range_stay_away, 
 } ip_range_policy;
 
+typedef enum _inject_direction {
+    outgoing_direction, 
+    incoming_direction, 
+} inject_direction;
+
 struct ip_range_entry {
 	u_int32_t	ip;
 	u_int8_t	prefix;
 	ip_range_policy	policy;
 	
 	TAILQ_ENTRY(ip_range_entry) entries;
+};
+
+struct delayed_inject_entry {
+    mbuf_t pkt;
+    struct timeval timestamp;
+    u_int32_t timeout; 
+    inject_direction direction;
+    TAILQ_ENTRY(delayed_inject_entry) entries;
 };
 
 extern ipfilter_t kn_ipf_ref;
@@ -61,10 +74,16 @@ extern errno_t kn_inject_after_http (mbuf_t otgn_data);
 
 // injection: 
 extern errno_t kn_tcp_pkt_from_params(mbuf_t *data, u_int8_t tcph_flags, u_int32_t iph_saddr, u_int32_t iph_daddr, u_int16_t tcph_sport, u_int16_t tcph_dport, u_int32_t tcph_seq, u_int32_t tcph_ack, const char* payload, size_t payload_len);
-extern errno_t kn_inject_tcp_from_params(u_int8_t tcph_flags, u_int32_t iph_saddr, u_int32_t iph_daddr, u_int16_t tcph_sport, u_int16_t tcph_dport, u_int32_t tcph_seq, u_int32_t tcph_ack, const char* payload, size_t payload_len);
+extern errno_t kn_inject_tcp_from_params(u_int8_t tcph_flags, u_int32_t iph_saddr, u_int32_t iph_daddr, u_int16_t tcph_sport, u_int16_t tcph_dport, u_int32_t tcph_seq, u_int32_t tcph_ack, const char* payload, size_t payload_len, inject_direction direction);
 
 extern errno_t kn_alloc_locks();
 extern errno_t kn_free_locks();
 extern errno_t kn_alloc_queues();
 extern errno_t kn_free_queues();
+
+// delayed packet injection: 
+extern errno_t kn_delay_pkt_inject(mbuf_t pkt, u_int32_t ms, inject_direction direction);
+extern boolean_t kn_delayed_inject_entry_in_queue(struct delayed_inject_entry* entry);
+extern void kn_delayed_inject_timeout(void* param);
+
 #endif /* KERNET_H */
