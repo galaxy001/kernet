@@ -1,0 +1,20 @@
+#!/bin/sh
+
+. /etc/rc.common
+
+StartService() {
+	ConsoleMessage "Starting Kernet"
+	kextload /System/Library/Extensions/kernet.kext
+}
+
+StopService() {
+	ConsoleMessage "Stoping Kernet"
+	kextunload /System/Library/Extensions/kernet.kext
+}
+
+RestartService() {
+	StopService;
+	StartService;
+}
+
+RunService "$1"
