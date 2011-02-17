@@ -12,7 +12,20 @@
 		743DE173130CF3400082DB4D /* kernet.c in Sources */ = {isa = PBXBuildFile; fileRef = 743DE172130CF3400082DB4D /* kernet.c */; };
 		743DE17B130CF6A40082DB4D /* manipulator.c in Sources */ = {isa = PBXBuildFile; fileRef = 743DE179130CF6A40082DB4D /* manipulator.c */; };
 		743DE17E130CF6CD0082DB4D /* kernet.h in Headers */ = {isa = PBXBuildFile; fileRef = 743DE17D130CF6CD0082DB4D /* kernet.h */; };
+		743EFC8E130DE63500CD5B72 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 743EFC8D130DE63500CD5B72 /* main.c */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		743EFC88130DE63500CD5B72 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		74124BF2130D558C00DBCB9B /* control.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = control.c; sourceTree = "<group>"; };
@@ -35,10 +48,20 @@
 		743DE172130CF3400082DB4D /* kernet.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = kernet.c; sourceTree = "<group>"; };
 		743DE179130CF6A40082DB4D /* manipulator.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = manipulator.c; sourceTree = "<group>"; };
 		743DE17D130CF6CD0082DB4D /* kernet.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = kernet.h; sourceTree = "<group>"; };
+		743EFC8A130DE63500CD5B72 /* kernet_cli */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = kernet_cli; sourceTree = BUILT_PRODUCTS_DIR; };
+		743EFC8D130DE63500CD5B72 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
+		743EFC8F130DE63500CD5B72 /* kernet_cli.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = kernet_cli.1; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		743DE161130CF3400082DB4D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		743EFC87130DE63500CD5B72 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -103,6 +126,7 @@
 				7421E724130CFB3300764B9B /* Scripts */,
 				7421E727130CFB3300764B9B /* StartupItem */,
 				743DE16B130CF3400082DB4D /* kernet */,
+				743EFC8C130DE63500CD5B72 /* kernet_cli */,
 				743DE168130CF3400082DB4D /* Frameworks */,
 				743DE167130CF3400082DB4D /* Products */,
 			);
@@ -112,6 +136,7 @@
 			isa = PBXGroup;
 			children = (
 				743DE166130CF3400082DB4D /* kernet.kext */,
+				743EFC8A130DE63500CD5B72 /* kernet_cli */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -154,6 +179,15 @@
 			name = "Supporting Files";
 			sourceTree = "<group>";
 		};
+		743EFC8C130DE63500CD5B72 /* kernet_cli */ = {
+			isa = PBXGroup;
+			children = (
+				743EFC8D130DE63500CD5B72 /* main.c */,
+				743EFC8F130DE63500CD5B72 /* kernet_cli.1 */,
+			);
+			path = kernet_cli;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -187,6 +221,23 @@
 			productReference = 743DE166130CF3400082DB4D /* kernet.kext */;
 			productType = "com.apple.product-type.kernel-extension";
 		};
+		743EFC89130DE63500CD5B72 /* kernet_cli */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 743EFC92130DE63500CD5B72 /* Build configuration list for PBXNativeTarget "kernet_cli" */;
+			buildPhases = (
+				743EFC86130DE63500CD5B72 /* Sources */,
+				743EFC87130DE63500CD5B72 /* Frameworks */,
+				743EFC88130DE63500CD5B72 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = kernet_cli;
+			productName = kernet_cli;
+			productReference = 743EFC8A130DE63500CD5B72 /* kernet_cli */;
+			productType = "com.apple.product-type.tool";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -205,6 +256,7 @@
 			projectRoot = "";
 			targets = (
 				743DE165130CF3400082DB4D /* kernet */,
+				743EFC89130DE63500CD5B72 /* kernet_cli */,
 			);
 		};
 /* End PBXProject section */
@@ -238,6 +290,14 @@
 				743DE173130CF3400082DB4D /* kernet.c in Sources */,
 				743DE17B130CF6A40082DB4D /* manipulator.c in Sources */,
 				74124BF4130D558C00DBCB9B /* control.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		743EFC86130DE63500CD5B72 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				743EFC8E130DE63500CD5B72 /* main.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -332,6 +392,30 @@
 			};
 			name = Release;
 		};
+		743EFC90130DE63500CD5B72 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		743EFC91130DE63500CD5B72 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -352,6 +436,14 @@
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
+		};
+		743EFC92130DE63500CD5B72 /* Build configuration list for PBXNativeTarget "kernet_cli" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				743EFC90130DE63500CD5B72 /* Debug */,
+				743EFC91130DE63500CD5B72 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
 		};
 /* End XCConfigurationList section */
 	};
