@@ -32,10 +32,10 @@
 #include "kernet.h"
 
 
-static OSMallocTag		gOSMallocTag;
-static mbuf_tag_id_t	gidtag;
-static boolean_t		gipFilterRegistered = FALSE;
-static boolean_t		gsfltFilterRegistered = FALSE;
+OSMallocTag		gOSMallocTag;
+mbuf_tag_id_t	gidtag;
+boolean_t		gipFilterRegistered = FALSE;
+boolean_t		gsfltFilterRegistered = FALSE;
 
 TAILQ_HEAD(, ip_range_entry)                ip_range_queue;
 TAILQ_HEAD(, delayed_inject_entry)          delayed_inject_queue;
@@ -144,6 +144,99 @@ void kn_debug(const char *fmt, ...)
 	va_end(listp);
 }
 
+errno_t kn_prepend_mbuf_hdr(mbuf_t *data, size_t pkt_len)
+{
+	mbuf_t			new_hdr;
+	errno_t			status;
+    
+	status = mbuf_gethdr(MBUF_WAITOK, MBUF_TYPE_DATA, &new_hdr);
+	if (KERN_SUCCESS == status)
+	{
+		/* we've created a replacement header, now we have to set things up */
+		/* set the mbuf argument as the next mbuf in the chain */
+		mbuf_setnext(new_hdr, *data);
+		
+		/* set the next packet attached to the mbuf argument in the pkt hdr */
+		mbuf_setnextpkt(new_hdr, mbuf_nextpkt(*data));
+		/* set the total chain len field in the pkt hdr */
+		mbuf_pkthdr_setlen(new_hdr, pkt_len);
+		mbuf_setlen(new_hdr, 0);
+        
+		mbuf_pkthdr_setrcvif(*data, NULL);
+		
+		/* now set the new mbuf_t as the new header mbuf_t */
+		*data = new_hdr;
+	}
+	return status;
+}
+
+boolean_t kn_mbuf_check_tag(mbuf_t *m, mbuf_tag_id_t module_id, mbuf_tag_type_t tag_type, packet_direction value)
+{
+    errno_t	status;
+	int		*tag_ref;
+	size_t	len;
+	
+	// Check whether we have seen this packet before.
+	status = mbuf_tag_find(*m, module_id, tag_type, &len, (void**)&tag_ref);
+	if ((status == 0) && (*tag_ref == value) && (len == sizeof(value)))
+		return TRUE;
+    
+	return FALSE;
+}
+
+errno_t	kn_mbuf_set_tag(mbuf_t *data, mbuf_tag_id_t id_tag, mbuf_tag_type_t tag_type, packet_direction value)
+{	
+	errno_t status;
+	int		*tag_ref = NULL;
+	size_t	len;
+	
+	// look for existing tag
+	status = mbuf_tag_find(*data, id_tag, tag_type, &len, (void*)&tag_ref);
+	// allocate tag if needed
+	if (status != 0) 
+	{		
+		status = mbuf_tag_allocate(*data, id_tag, tag_type, sizeof(value), MBUF_WAITOK, (void**)&tag_ref);
+		if (status == 0)
+			*tag_ref = value;		// set tag_ref
+		else if (status == EINVAL)
+		{			
+			mbuf_flags_t	flags;
+			// check to see if the mbuf_tag_allocate failed because the mbuf_t has the M_PKTHDR flag bit not set
+			flags = mbuf_flags(*data);
+			if ((flags & MBUF_PKTHDR) == 0)
+			{
+				mbuf_t			m = *data;
+				size_t			totalbytes = 0;
+                
+				/* the packet is missing the MBUF_PKTHDR bit. In order to use the mbuf_tag_allocate, function,
+                 we need to prepend an mbuf to the mbuf which has the MBUF_PKTHDR bit set.
+                 We cannot just set this bit in the flags field as there are assumptions about the internal
+                 fields which there are no API's to access.
+                 */
+				kn_debug("mbuf_t missing MBUF_PKTHDR bit\n");
+                
+				while (m)
+				{
+					totalbytes += mbuf_len(m);
+					m = mbuf_next(m);	// look at the next mbuf
+				}
+				status = kn_prepend_mbuf_hdr(data, totalbytes);
+				if (status == KERN_SUCCESS)
+				{
+					status = mbuf_tag_allocate(*data, id_tag, tag_type, sizeof(value), MBUF_WAITOK, (void**)&tag_ref);
+					if (status)
+					{
+						kn_debug("mbuf_tag_allocate failed a second time, status was %d\n", status);
+					}
+				}
+			}
+		}
+		else
+			kn_debug("mbuf_tag_allocate failed, status was %d\n", status);
+	}
+	return status;
+}
+
 errno_t kn_ip_input_fn (void *cookie, mbuf_t *data, int offset, u_int8_t protocol)
 {
 	u_int16_t len;
@@ -217,7 +310,7 @@ errno_t kn_ip_input_fn (void *cookie, mbuf_t *data, int offset, u_int8_t protoco
 			addr = iph->ip_src.s_addr;
 			kn_debug("ACK+SYN packet from %s\n", kn_inet_ntoa(addr));
 			if (kn_shall_apply_kernet_to_ip(addr) == TRUE) {
-                retval = kn_inject_after_synack(*data);
+            //    retval = kn_inject_after_synack(*data);
 			}
 			else {
 			}
@@ -237,6 +330,10 @@ errno_t kn_ip_output_fn (void *cookie, mbuf_t *data, ipf_pktopts_t options)
 	
 	iph = (struct ip*)mbuf_data(*data);
 	
+    if (kn_mbuf_check_tag(data, gidtag, kMY_TAG_TYPE, outgoing_direction) == TRUE) {
+        return KERN_SUCCESS;
+    }
+    
 	if (ntohs(iph->ip_len) < (sizeof(struct ip) + sizeof(struct tcphdr) + MIN_HTTP_REQUEST_LEN)) {
 		return KERN_SUCCESS;
 	}
@@ -351,7 +448,7 @@ errno_t kn_append_ip_range_entry(u_int32_t ip, u_int8_t prefix, ip_range_policy 
     return 0;
 }
 
-errno_t kn_delay_pkt_inject(mbuf_t pkt, u_int32_t ms, inject_direction direction)
+errno_t kn_delay_pkt_inject(mbuf_t pkt, u_int32_t ms, packet_direction direction)
 {
     struct delayed_inject_entry* entry;
     errno_t retval = 0;
@@ -420,7 +517,6 @@ void kn_delayed_inject_timeout(void* param)
     
     timersub(&tv_now, &entry->timestamp, &tv_diff);
     ms_diff = tv_diff.tv_sec * 1000 + tv_diff.tv_usec / 1000;
-    kn_debug("tv_diff.tv_usec %d\n", tv_diff.tv_usec);
     
     if (entry->direction == outgoing_direction) {
         retval = ipf_inject_output(pkt, kn_ipf_ref, NULL);
@@ -434,7 +530,7 @@ void kn_delayed_inject_timeout(void* param)
         goto FREE_AND_END;
     }
 	if (retval != 0) {
-		kn_debug("%ums delayed ipf_inject_output returned error %d\n", ms_diff, retval);
+		kn_debug("%dms delayed ipf_inject_output returned error %d\n", ms_diff, retval);
         goto FREE_AND_END;
     }
 	else {

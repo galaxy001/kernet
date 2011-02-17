@@ -42,6 +42,7 @@
 #include "kernet.h"
 
 /* data_offset = offset of the fragmented second packet without IP header counted in */
+/* not functioning ! */
 static errno_t kn_fragment_pkt_to_two_pieces(mbuf_t orgn_pkt, mbuf_t *pkt1, mbuf_t *pkt2, u_int16_t data_offset)
 {
     struct ip* iph;
@@ -273,6 +274,12 @@ errno_t kn_inject_after_http (mbuf_t otgn_data)
         return retval;
     }
     
+    retval = kn_mbuf_set_tag(&otgn_data_dup, gidtag, kMY_TAG_TYPE, outgoing_direction);
+    if (retval != 0) {
+        kn_debug("kn_mbuf_set_tag returned error %d\n", retval);
+        return retval;
+    }
+    
     retval = kn_delay_pkt_inject(otgn_data, 5, outgoing_direction);
     if (retval != 0) {
         kn_debug("kn_delay_pkt_inject returned error %d\n", retval);
@@ -281,13 +288,6 @@ errno_t kn_inject_after_http (mbuf_t otgn_data)
 	return KERN_SUCCESS;
 	
 }
-
-
-
-
-
-
-
 
 void kn_fulfill_ip_ranges()
 {
@@ -447,7 +447,7 @@ FAILURE:
     
 }
 
-errno_t kn_inject_tcp_from_params(u_int8_t tcph_flags, u_int32_t iph_saddr, u_int32_t iph_daddr, u_int16_t tcph_sport, u_int16_t tcph_dport, u_int32_t tcph_seq, u_int32_t tcph_ack, const char* payload, size_t payload_len, inject_direction direction)
+errno_t kn_inject_tcp_from_params(u_int8_t tcph_flags, u_int32_t iph_saddr, u_int32_t iph_daddr, u_int16_t tcph_sport, u_int16_t tcph_dport, u_int32_t tcph_seq, u_int32_t tcph_ack, const char* payload, size_t payload_len, packet_direction direction)
 {
 	mbuf_t pkt; 
     errno_t retval = 0;
