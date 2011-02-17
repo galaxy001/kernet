@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Description</key>
+	<string>Kernet Kernel Extension Loader</string>
+	<key>Messages</key>
+	<dict>
+		<key>start</key>
+		<string>Loading Kernet</string>
+		<key>stop</key>
+		<string>Kernet: Goodbye</string>
+	</dict>
+	<key>Provides</key>
+	<array>
+		<string>Kernet</string>
+	</array>
+	<key>Requires</key>
+	<array>
+		<string>Core Services</string>
+	</array>
+	<key>Uses</key>
+	<array/>
+</dict>
+</plist>

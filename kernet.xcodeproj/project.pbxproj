@@ -14,17 +14,17 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		7421E701130CF86B00764B9B /* kernet_0.8.kext */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.kernel-extension"; path = kernet_0.8.kext; sourceTree = "<group>"; };
-		7421E702130CF86B00764B9B /* kernet_0.9.kext */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.kernel-extension"; path = kernet_0.9.kext; sourceTree = "<group>"; };
-		7421E704130CF86B00764B9B /* build.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = build.txt; sourceTree = "<group>"; };
-		7421E705130CF86B00764B9B /* ip.py */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.python; path = ip.py; sourceTree = "<group>"; };
-		7421E708130CF86B00764B9B /* KernetLoader */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = KernetLoader; sourceTree = "<group>"; };
-		7421E709130CF86B00764B9B /* StartupParameters.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = StartupParameters.plist; sourceTree = "<group>"; };
-		7421E711130CF87D00764B9B /* 01kext-contents.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = "01kext-contents.xml"; sourceTree = "<group>"; };
-		7421E712130CF87D00764B9B /* 01kext.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = 01kext.xml; sourceTree = "<group>"; };
-		7421E713130CF87D00764B9B /* 02kernetloader-contents.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = "02kernetloader-contents.xml"; sourceTree = "<group>"; };
-		7421E714130CF87D00764B9B /* 02kernetloader.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = 02kernetloader.xml; sourceTree = "<group>"; };
-		7421E715130CF87D00764B9B /* index.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = index.xml; sourceTree = "<group>"; };
+		7421E71C130CFB3300764B9B /* 01kext-contents.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = "01kext-contents.xml"; sourceTree = "<group>"; };
+		7421E71D130CFB3300764B9B /* 01kext.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = 01kext.xml; sourceTree = "<group>"; };
+		7421E71E130CFB3300764B9B /* 02kernetloader-contents.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = "02kernetloader-contents.xml"; sourceTree = "<group>"; };
+		7421E71F130CFB3300764B9B /* 02kernetloader.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = 02kernetloader.xml; sourceTree = "<group>"; };
+		7421E720130CFB3300764B9B /* index.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = index.xml; sourceTree = "<group>"; };
+		7421E722130CFB3300764B9B /* kernet_0.8.kext */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.kernel-extension"; path = kernet_0.8.kext; sourceTree = "<group>"; };
+		7421E723130CFB3300764B9B /* kernet_0.9.kext */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.kernel-extension"; path = kernet_0.9.kext; sourceTree = "<group>"; };
+		7421E725130CFB3300764B9B /* build.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = build.txt; sourceTree = "<group>"; };
+		7421E726130CFB3300764B9B /* ip.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = ip.py; sourceTree = "<group>"; };
+		7421E729130CFB3300764B9B /* KernetLoader */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = KernetLoader; sourceTree = "<group>"; };
+		7421E72A130CFB3300764B9B /* StartupParameters.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = StartupParameters.plist; sourceTree = "<group>"; };
 		743DE166130CF3400082DB4D /* kernet.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = kernet.kext; sourceTree = BUILT_PRODUCTS_DIR; };
 		743DE16A130CF3400082DB4D /* Kernel.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Kernel.framework; path = System/Library/Frameworks/Kernel.framework; sourceTree = SDKROOT; };
 		743DE16D130CF3400082DB4D /* kernet-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "kernet-Info.plist"; sourceTree = "<group>"; };
@@ -46,60 +46,60 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		7421E700130CF86B00764B9B /* Releases */ = {
+		7421E71B130CFB3300764B9B /* KernetInstallerPackage.pmdoc */ = {
 			isa = PBXGroup;
 			children = (
-				7421E701130CF86B00764B9B /* kernet_0.8.kext */,
-				7421E702130CF86B00764B9B /* kernet_0.9.kext */,
+				7421E71C130CFB3300764B9B /* 01kext-contents.xml */,
+				7421E71D130CFB3300764B9B /* 01kext.xml */,
+				7421E71E130CFB3300764B9B /* 02kernetloader-contents.xml */,
+				7421E71F130CFB3300764B9B /* 02kernetloader.xml */,
+				7421E720130CFB3300764B9B /* index.xml */,
+			);
+			path = KernetInstallerPackage.pmdoc;
+			sourceTree = "<group>";
+		};
+		7421E721130CFB3300764B9B /* Releases */ = {
+			isa = PBXGroup;
+			children = (
+				7421E722130CFB3300764B9B /* kernet_0.8.kext */,
+				7421E723130CFB3300764B9B /* kernet_0.9.kext */,
 			);
 			path = Releases;
 			sourceTree = "<group>";
 		};
-		7421E703130CF86B00764B9B /* Scripts */ = {
+		7421E724130CFB3300764B9B /* Scripts */ = {
 			isa = PBXGroup;
 			children = (
-				7421E704130CF86B00764B9B /* build.txt */,
-				7421E705130CF86B00764B9B /* ip.py */,
+				7421E725130CFB3300764B9B /* build.txt */,
+				7421E726130CFB3300764B9B /* ip.py */,
 			);
 			path = Scripts;
 			sourceTree = "<group>";
 		};
-		7421E706130CF86B00764B9B /* StartupItem */ = {
+		7421E727130CFB3300764B9B /* StartupItem */ = {
 			isa = PBXGroup;
 			children = (
-				7421E707130CF86B00764B9B /* KernetLoader */,
+				7421E728130CFB3300764B9B /* KernetLoader */,
 			);
 			path = StartupItem;
 			sourceTree = "<group>";
 		};
-		7421E707130CF86B00764B9B /* KernetLoader */ = {
+		7421E728130CFB3300764B9B /* KernetLoader */ = {
 			isa = PBXGroup;
 			children = (
-				7421E708130CF86B00764B9B /* KernetLoader */,
-				7421E709130CF86B00764B9B /* StartupParameters.plist */,
+				7421E729130CFB3300764B9B /* KernetLoader */,
+				7421E72A130CFB3300764B9B /* StartupParameters.plist */,
 			);
 			path = KernetLoader;
-			sourceTree = "<group>";
-		};
-		7421E710130CF87D00764B9B /* KernetInstallerPackage.pmdoc */ = {
-			isa = PBXGroup;
-			children = (
-				7421E711130CF87D00764B9B /* 01kext-contents.xml */,
-				7421E712130CF87D00764B9B /* 01kext.xml */,
-				7421E713130CF87D00764B9B /* 02kernetloader-contents.xml */,
-				7421E714130CF87D00764B9B /* 02kernetloader.xml */,
-				7421E715130CF87D00764B9B /* index.xml */,
-			);
-			path = KernetInstallerPackage.pmdoc;
 			sourceTree = "<group>";
 		};
 		743DE159130CF33E0082DB4D = {
 			isa = PBXGroup;
 			children = (
-				7421E710130CF87D00764B9B /* KernetInstallerPackage.pmdoc */,
-				7421E700130CF86B00764B9B /* Releases */,
-				7421E703130CF86B00764B9B /* Scripts */,
-				7421E706130CF86B00764B9B /* StartupItem */,
+				7421E71B130CFB3300764B9B /* KernetInstallerPackage.pmdoc */,
+				7421E721130CFB3300764B9B /* Releases */,
+				7421E724130CFB3300764B9B /* Scripts */,
+				7421E727130CFB3300764B9B /* StartupItem */,
 				743DE16B130CF3400082DB4D /* kernet */,
 				743DE168130CF3400082DB4D /* Frameworks */,
 				743DE167130CF3400082DB4D /* Products */,
