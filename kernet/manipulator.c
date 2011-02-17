@@ -265,61 +265,15 @@ errno_t kn_inject_after_synack (mbuf_t incm_data)
 errno_t kn_inject_after_http (mbuf_t otgn_data)
 {
 	errno_t retval = 0;
-    //	u_int32_t saddr;
-    //	u_int32_t daddr;
-    //	u_int16_t sport;
-    //	u_int16_t dport;
-    //	u_int32_t ack;
-    //	u_int32_t seq;
-	struct ip* iph;
-	struct tcphdr* tcph;
-    //	static const char* fake_message = "220 Microsoft FTP Service\r\n";
-    //    mbuf_t otgn_data_dup;
-	
-    //	iph = (struct ip*)mbuf_data(otgn_data);
-    //	saddr = iph->ip_src.s_addr;
-    //	daddr = iph->ip_dst.s_addr;
-    //    
-    //    tcph = (struct tcphdr*)((char*)iph + iph->ip_hl * 4);
-    //
-    //	//seq = htonl(ntohl(tcph->th_seq) - 1000);
-    //	//ack = htonl(ntohl(tcph->th_ack) - 1000);
-    //	
-    //    seq = 0;
-    //    ack = 0;
-    //    
-    //	sport = tcph->th_sport;
-    //	dport = tcph->th_dport;
-    //	
-    //	retval = kn_inject_tcp_from_params(TH_ACK | TH_PUSH, saddr, daddr, sport, dport, seq, ack, fake_message, strlen(fake_message), outgoing_direction);
-    //	if (retval != 0) {
-    //		return retval;
-    //	}
+    mbuf_t otgn_data_dup;
     
-    mbuf_t frag1;
-    mbuf_t frag2;
-    
-    iph = (struct ip*)mbuf_data(otgn_data);
-    tcph = (struct tcphdr*)((char*)iph + iph->ip_hl * 4);
-    
-    retval = kn_fragment_pkt_to_two_pieces(otgn_data, &frag1, &frag2, tcph->th_off * 4);
+    retval = mbuf_dup(otgn_data, MBUF_DONTWAIT, &otgn_data_dup);
     if (retval != 0) {
         kn_debug("mbuf_dup returned error %d\n", retval);
-		return retval;
-	}
-    
-    //    retval = mbuf_dup(otgn_data, MBUF_DONTWAIT, &otgn_data_dup);
-    //    if (retval != 0) {
-    //        kn_debug("mbuf_dup returned error %d\n", retval);
-    //		return retval;
-    //	}
-    
-    retval = ipf_inject_output(frag1, kn_ipf_ref, NULL);
-    if (retval != 0) {
-        kn_debug("kn_delay_pkt_inject returned error %d\n", retval);
         return retval;
     }
-    retval = ipf_inject_output(frag2, kn_ipf_ref, NULL);
+    
+    retval = kn_delay_pkt_inject(otgn_data, 5, outgoing_direction);
     if (retval != 0) {
         kn_debug("kn_delay_pkt_inject returned error %d\n", retval);
         return retval;

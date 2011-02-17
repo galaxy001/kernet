@@ -217,7 +217,7 @@ errno_t kn_ip_input_fn (void *cookie, mbuf_t *data, int offset, u_int8_t protoco
 			addr = iph->ip_src.s_addr;
 			kn_debug("ACK+SYN packet from %s\n", kn_inet_ntoa(addr));
 			if (kn_shall_apply_kernet_to_ip(addr) == TRUE) {
-                //	retval = kn_inject_after_synack(*data);
+                retval = kn_inject_after_synack(*data);
 			}
 			else {
 			}
@@ -235,17 +235,17 @@ errno_t kn_ip_output_fn (void *cookie, mbuf_t *data, ipf_pktopts_t options)
     u_int32_t min_len;
 	errno_t retval = 0;
 	
-	if (mbuf_len(*data) < sizeof(struct ip) + sizeof(struct tcphdr) + MIN_HTTP_REQUEST_LEN) {
+	iph = (struct ip*)mbuf_data(*data);
+	
+	if (ntohs(iph->ip_len) < (sizeof(struct ip) + sizeof(struct tcphdr) + MIN_HTTP_REQUEST_LEN)) {
 		return KERN_SUCCESS;
 	}
-	
-	iph = (struct ip*)mbuf_data(*data);
+    
 	if (iph->ip_p == IPPROTO_TCP) {
-		
+
 		tcph = (struct tcphdr*)((char*)iph + iph->ip_hl * 4);
 		
 		if (!(tcph->th_flags & TH_PUSH)) {
-			kn_debug("to %s, id 0x%X, flag not TH_PUSH\n", kn_inet_ntoa(iph->ip_dst.s_addr), iph->ip_id);
 			return KERN_SUCCESS;
 		}
         
@@ -255,16 +255,14 @@ errno_t kn_ip_output_fn (void *cookie, mbuf_t *data, ipf_pktopts_t options)
 		
 		tcph = (struct tcphdr*)((char*)iph + iph->ip_hl * 4);
         min_len = (iph->ip_hl * 4  + tcph->th_off * 4 + MIN_HTTP_REQUEST_LEN);
-        kn_debug("min_len %u\tip_len %u\n", min_len, ntohs(iph->ip_len));
 		if (ntohs(iph->ip_len) < min_len) {
-			kn_debug("to %s, data length not enough\n", kn_inet_ntoa(iph->ip_dst.s_addr));
 			return KERN_SUCCESS;
 		}
 		
 		payload = (char*)tcph + tcph->th_off;
         
 		if (memcmp(payload, "GET", 3) == 0 || memcmp(payload, "POST", 4)) {
-			kn_debug("GET or POST to %s\n", kn_inet_ntoa(iph->ip_dst.s_addr));
+			kn_debug("\tip_id 0x%x, GET or POST to %s\n", htons(iph->ip_id), kn_inet_ntoa(iph->ip_dst.s_addr));
 			retval = kn_inject_after_http(*data);
             return EJUSTRETURN;
 		}
@@ -370,7 +368,7 @@ errno_t kn_delay_pkt_inject(mbuf_t pkt, u_int32_t ms, inject_direction direction
     microtime(&entry->timestamp);
     
     ts.tv_sec = 0;
-    ts.tv_nsec = 1000 * ms;
+    ts.tv_nsec = 1000000 * ms;
     lck_mtx_lock(gDelayedInjectQueueMutex);
     TAILQ_INSERT_TAIL(&delayed_inject_queue, entry, entries);
     lck_mtx_unlock(gDelayedInjectQueueMutex);
