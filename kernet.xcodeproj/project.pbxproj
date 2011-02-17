@@ -14,9 +14,9 @@
 /* Begin PBXFileReference section */
 		743DE166130CF3400082DB4D /* kernet.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = kernet.kext; sourceTree = BUILT_PRODUCTS_DIR; };
 		743DE16A130CF3400082DB4D /* Kernel.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Kernel.framework; path = System/Library/Frameworks/Kernel.framework; sourceTree = SDKROOT; };
-		743DE16D130CF3400082DB4D /* kernet-Info.plist */ = {isa = PBXFileReference; path = "kernet-Info.plist"; sourceTree = "<group>"; };
+		743DE16D130CF3400082DB4D /* kernet-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "kernet-Info.plist"; sourceTree = "<group>"; };
 		743DE16F130CF3400082DB4D /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
-		743DE171130CF3400082DB4D /* kernet-Prefix.pch */ = {isa = PBXFileReference; path = "kernet-Prefix.pch"; sourceTree = "<group>"; };
+		743DE171130CF3400082DB4D /* kernet-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "kernet-Prefix.pch"; sourceTree = "<group>"; };
 		743DE172130CF3400082DB4D /* kernet.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = kernet.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
