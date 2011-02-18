@@ -17,8 +17,8 @@ struct dnshdr
 };
 
 typedef enum _ip_range_policy {
-	ip_range_apply_kernet, 
-	ip_range_stay_away, 
+	ip_range_apply_kernet = 1, 
+	ip_range_stay_away = 2,
 } ip_range_policy;
 
 typedef enum _packet_irection {

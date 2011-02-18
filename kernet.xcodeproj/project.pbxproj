@@ -30,7 +30,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		74124890130E033600715730 /* kernet_kext.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = kernet_kext.kext; sourceTree = BUILT_PRODUCTS_DIR; };
+		74124890130E033600715730 /* kernet.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = kernet.kext; sourceTree = BUILT_PRODUCTS_DIR; };
 		74124894130E033600715730 /* Kernel.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Kernel.framework; path = System/Library/Frameworks/Kernel.framework; sourceTree = SDKROOT; };
 		741248A2130E036B00715730 /* common.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = common.h; path = kernet_kext/common.h; sourceTree = SOURCE_ROOT; };
 		741248A3130E036B00715730 /* control.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = control.c; path = kernet_kext/control.c; sourceTree = SOURCE_ROOT; };
@@ -64,7 +64,7 @@
 		74124891130E033600715730 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				74124890130E033600715730 /* kernet_kext.kext */,
+				74124890130E033600715730 /* kernet.kext */,
 				741248C9130E03EA00715730 /* kernet_cli */,
 			);
 			name = Products;
@@ -167,7 +167,7 @@
 			);
 			name = kernet_kext;
 			productName = kernet;
-			productReference = 74124890130E033600715730 /* kernet_kext.kext */;
+			productReference = 74124890130E033600715730 /* kernet.kext */;
 			productType = "com.apple.product-type.kernel-extension";
 		};
 		741248C8130E03EA00715730 /* kernet_cli */ = {
@@ -274,12 +274,12 @@
 				INSTALL_PATH = "$(SYSTEM_LIBRARY_DIR)/Extensions";
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				MODULE_NAME = com.ccp0101.kext.kernet;
-				MODULE_START = kernet_start;
-				MODULE_STOP = kernet_stop;
+				MODULE_START = com_ccp0101_kext_kernet_start;
+				MODULE_STOP = com_ccp0101_kext_kernet_stop;
 				MODULE_VERSION = 1.0.0d1;
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_CFLAGS = "-DKERNET_KEXT";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = kernet;
 				SDKROOT = macosx;
 				WRAPPER_EXTENSION = kext;
 			};
@@ -304,11 +304,11 @@
 				INSTALL_PATH = "$(SYSTEM_LIBRARY_DIR)/Extensions";
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				MODULE_NAME = com.ccp0101.kext.kernet;
-				MODULE_START = kernet_start;
-				MODULE_STOP = kernet_stop;
+				MODULE_START = com_ccp0101_kext_kernet_start;
+				MODULE_STOP = com_ccp0101_kext_kernet_stop;
 				MODULE_VERSION = 1.0.0d1;
 				OTHER_CFLAGS = "-DKERNET_KEXT";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = kernet;
 				SDKROOT = macosx;
 				WRAPPER_EXTENSION = kext;
 			};
@@ -377,6 +377,7 @@
 				7412489F130E033600715730 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		741248CF130E03EB00715730 /* Build configuration list for PBXNativeTarget "kernet_cli" */ = {
 			isa = XCConfigurationList;
@@ -385,6 +386,7 @@
 				741248D1130E03EB00715730 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		743EFCCF130DE8E800CD5B72 /* Build configuration list for PBXProject "Kernet" */ = {
 			isa = XCConfigurationList;

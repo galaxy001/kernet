@@ -407,7 +407,6 @@ errno_t kn_sflt_attach_fn (void **cookie, socket_t so)
 
 void kn_sflt_detach_fn (void *cookie, socket_t so)
 {
-	kn_debug("detached so 0x%X\n", so);
 }
 
 void kn_sflt_notify_fn (void *cookie, socket_t so, sflt_event_t event, void *param)

@@ -91,6 +91,8 @@ errno_t kn_ctl_disconnect_fn(kern_ctl_ref kctlref, u_int32_t unit, void *unitinf
     
     OSFree(cb, sizeof(struct control_block_t), gOSMallocTag);
     
+    kn_debug("kn_ctl_disconnect_fn - unit is %d\n", unit);
+    
     return KERN_SUCCESS;
 }
 
@@ -128,89 +130,65 @@ errno_t kn_ctl_parse_request(mbuf_t data)
 {
     errno_t retval = 0;
     
-    u_int8_t opt_code = 0;
-    u_int32_t req_magic_word;
-    u_int32_t req_id;
-
-    u_int16_t tot_len = 0;
-    u_int16_t read_len = 0;
-    u_int16_t expected_len = sizeof(CTL_MAGIC_WORD) + sizeof(opt_code) + sizeof(req_id);
+    u_int32_t tot_len;
+    struct request_t *req;
+    u_int16_t expected_len = sizeof(struct request_t);
     char *buf;
-    
-    tot_len = mbuf_len(data);
+        
     buf = mbuf_data(data);
+    tot_len = mbuf_len(data);
     
     if (tot_len < expected_len) {
         kn_debug("ctl request too short, expected %d bytes but only %d bytes supplied\n", tot_len, expected_len);
     }
     
-    memcpy(&req_magic_word, buf + read_len, sizeof(CTL_MAGIC_WORD));
-    read_len += sizeof(CTL_MAGIC_WORD);
-    if (req_magic_word != CTL_MAGIC_WORD) {
-        kn_debug("magic word 0x%X mismatches\n", req_magic_word);
+    req = (struct request_t*)buf;
+    
+    if (req->magic != CTL_MAGIC_WORD) {
+        kn_debug("magic word 0x%X mismatches\n", req->magic);
         return EBADMSG;
     }
-    
-    memcpy(&req_id, buf + read_len, sizeof(req_id));
-    read_len += sizeof(req_id);
-    
-    memcpy(&opt_code, buf + read_len, sizeof(opt_code));
-    read_len += sizeof(opt_code);
-    
-    if (opt_code == CTL_OPT_APPEND_IP_RANGE) {
-        /* (u_int32_t)ip + (u_int8_t)prefix + (u_int8_t)policy */
         
-        u_int32_t r_ip;
-        u_int8_t r_prefix, r_raw_policy;
+    if (req->opt_code == CTL_OPT_APPEND_IP_RANGE) {
+        struct append_ip_range_req_t *opt_req;
         ip_range_policy r_policy;
-        expected_len += sizeof(r_ip) + sizeof(r_policy) + sizeof(r_prefix);
+
+        expected_len += sizeof(struct append_ip_range_req_t);
         
         if (expected_len != tot_len) {
-            kn_debug("req_id %d, length %d of request for optcode 0x%X is invalid\n", req_id, opt_code, tot_len);
+            kn_debug("req->id %d, length %d of request for optcode 0x%X is invalid\n", req->id, tot_len, req->opt_code);
             return EBADMSG;
         }
         
-        memcpy(&r_ip, buf + read_len, sizeof(r_ip));
-        read_len += sizeof(r_ip);
+        opt_req = (struct append_ip_range_req_t*)(buf + sizeof(struct request_t));
         
-        memcpy(&r_policy, buf + read_len, sizeof(r_policy));
-        read_len += sizeof(r_policy);
-        
-        memcpy(&r_raw_policy, buf + read_len, sizeof(r_raw_policy));
-        read_len += sizeof(r_raw_policy);
-        
-        if (read_len != tot_len) {
-            kn_debug("req_id %d, progma error. optcode 0x%X, read %d bytes, less than supplied\n", req_id, opt_code, read_len);
-            return EPROTO;
-        }
-        
-        if (r_raw_policy == 0xA1) {
+        if (opt_req->policy == IP_RANGE_POLICY_APPLY) {
             r_policy = ip_range_apply_kernet;
         }
-        else if (r_raw_policy == 0xA2) {
+        else if (opt_req->policy == IP_RANGE_POLICY_IGNORE) {
             r_policy = ip_range_stay_away;
         }
         else {
-            kn_debug("req_id %d, progma error. optcode 0x%X, unknown policy\n", req_id, opt_code);
+            kn_debug("req->id %d, progma error. optcode 0x%X, unknown policy 0x%X\n", req->id, req->opt_code, opt_req->policy);
             return EBADMSG;
         }
         
-        retval = kn_append_ip_range_entry(r_ip, r_prefix, r_policy);
+        retval = kn_append_ip_range_entry(opt_req->ip, opt_req->prefix, r_policy);
         if (retval == E_ALREADY_EXIST) {
-            kn_debug("req_id %d, optcode 0x%X tried to append existing range %s:%d\n", req_id, opt_code, kn_inet_ntoa(r_ip), r_prefix);
-            kn_ctl_send_response(req_id, opt_code, E_ALREADY_EXIST);
+            kn_debug("req->id %d, optcode 0x%X tried to append existing range %s:%d\n", req->id, req->opt_code, kn_inet_ntoa(opt_req->ip), opt_req->prefix);
+            kn_ctl_send_response(req->id, req->opt_code, E_ALREADY_EXIST);
             return retval;
         }
         else if (retval == 0) {
-            kn_debug("req_id %d, optcode 0x%X succeeded appending range %s:%d\n", req_id, opt_code, kn_inet_ntoa(r_ip), r_prefix);
-            kn_ctl_send_response(req_id, opt_code, E_OKAY);
+            kn_debug("req->id %d, optcode 0x%X succeeded appending range %s:%d\n", req->id, req->opt_code, kn_inet_ntoa(opt_req->ip), opt_req->prefix);
+            kn_ctl_send_response(req->id, req->opt_code, E_OKAY);
             return KERN_SUCCESS;
         }
         
     }
     else {
-        kn_debug("req_id %d, unknown optcode 0x%X\n", req_id, opt_code);
-        kn_ctl_send_response(req_id, opt_code, E_UNKNOWN_OPT);
+        kn_debug("req->id %d, unknown optcode 0x%X\n", req->id, req->opt_code);
+        kn_ctl_send_response(req->id, req->opt_code, E_UNKNOWN_OPT);
     }
     
     return retval;
@@ -218,11 +196,9 @@ errno_t kn_ctl_parse_request(mbuf_t data)
 
 errno_t kn_ctl_send_response(u_int32_t req_id, u_int8_t opt_code, u_int32_t status)
 {
-    char buf[256];
     errno_t retval = 0;
-    u_int32_t written_len = 0;
-    static const u_int32_t magic_word = CTL_MAGIC_WORD;
     struct control_block_t *cb;
+    struct response_t response;
 
     lck_rw_lock_shared(gMasterRecordLock);
     cb = master_record.cb;
@@ -232,16 +208,12 @@ errno_t kn_ctl_send_response(u_int32_t req_id, u_int8_t opt_code, u_int32_t stat
         return ENOTCONN;
     }
     
-    memcpy(buf + written_len, &magic_word, sizeof(magic_word));
-    written_len += sizeof(magic_word);
-    memcpy(buf + written_len, &req_id, sizeof(req_id));
-    written_len += sizeof(req_id);
-    memcpy(buf + written_len, &opt_code, sizeof(opt_code));
-    written_len += sizeof(opt_code);
-    memcpy(buf + written_len, &status, sizeof(status));
-    written_len += sizeof(status);
+    response.magic = CTL_MAGIC_WORD;
+    response.opt_code = opt_code;
+    response.status = status;
+    response.id = req_id;
     
-    retval = ctl_enqueuedata(cb->ref, cb->unit, buf, written_len, 0);
+    retval = ctl_enqueuedata(cb->ref, cb->unit, &response, sizeof(response), 0);
     if (retval != 0) {
         kn_debug("ctl_enqueuedata returned error %d\n", retval);
         return retval;
