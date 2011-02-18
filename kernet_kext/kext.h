@@ -1,6 +1,10 @@
 #ifndef KERNET_H
 #define KERNET_H
 
+#ifndef KERNET_KEXT
+#error Private header for kernet kernel extension!
+#endif
+
 #include "common.h"
 
 struct dnshdr

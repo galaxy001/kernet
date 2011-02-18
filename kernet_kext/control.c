@@ -30,7 +30,7 @@
 #include <stdarg.h>
 #include <sys/queue.h>
 
-#include "kernet.h"
+#include "kext.h"
 
 errno_t kn_ctl_connect_fn(kern_ctl_ref kctlref, struct sockaddr_ctl *sac, void **unitinfo)
 {

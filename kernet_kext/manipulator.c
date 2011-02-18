@@ -30,7 +30,7 @@
 #include <stdarg.h>
 #include <sys/queue.h>
 
-#include "kernet.h"
+#include "kext.h"
 
 /* data_offset = offset of the fragmented second packet without IP header counted in */
 /* not functioning ! */

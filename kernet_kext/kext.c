@@ -29,7 +29,7 @@
 #include <stdarg.h>
 #include <sys/queue.h>
 
-#include "kernet.h"
+#include "kext.h"
 
 
 OSMallocTag		gOSMallocTag;
