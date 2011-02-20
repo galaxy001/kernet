@@ -179,12 +179,43 @@ errno_t kn_ctl_parse_request(mbuf_t data)
             kn_ctl_send_response(req->id, req->opt_code, E_ALREADY_EXIST);
             return retval;
         }
+        if (retval == E_UPDATED) {
+            kn_debug("req->id %d, optcode 0x%X updated existing range %s:%d\n", req->id, req->opt_code, kn_inet_ntoa(opt_req->ip), opt_req->prefix);
+            kn_ctl_send_response(req->id, req->opt_code, E_UPDATED);
+            return retval;
+        }
+
         else if (retval == 0) {
             kn_debug("req->id %d, optcode 0x%X succeeded appending range %s:%d\n", req->id, req->opt_code, kn_inet_ntoa(opt_req->ip), opt_req->prefix);
             kn_ctl_send_response(req->id, req->opt_code, E_OKAY);
             return KERN_SUCCESS;
         }
         
+    }
+    if (req->opt_code == CTL_OPT_REMOVE_IP_RANGE) {
+        struct remove_ip_range_req_t *opt_req;
+        
+        expected_len += sizeof(struct remove_ip_range_req_t);
+        
+        if (expected_len != tot_len) {
+            kn_debug("req->id %d, length %d of request for optcode 0x%X is invalid\n", req->id, tot_len, req->opt_code);
+            return EBADMSG;
+        }
+        
+        opt_req = (struct remove_ip_range_req_t*)(buf + sizeof(struct request_t));
+        
+        retval = kn_remove_ip_range_entry(opt_req->ip, opt_req->prefix);
+        if (retval == E_DONT_EXIT) {
+            kn_debug("req->id %d, optcode 0x%X tried to remove non-existing range %s:%d\n", req->id, req->opt_code, kn_inet_ntoa(opt_req->ip), opt_req->prefix);
+            kn_ctl_send_response(req->id, req->opt_code, E_DONT_EXIT);
+            return retval;
+        }
+        
+        else if (retval == 0) {
+            kn_debug("req->id %d, optcode 0x%X succeeded removing range %s:%d\n", req->id, req->opt_code, kn_inet_ntoa(opt_req->ip), opt_req->prefix);
+            kn_ctl_send_response(req->id, req->opt_code, E_OKAY);
+            return KERN_SUCCESS;
+        }
     }
     else {
         kn_debug("req->id %d, unknown optcode 0x%X\n", req->id, req->opt_code);

@@ -214,6 +214,11 @@ errno_t kn_inject_after_synack (mbuf_t incm_data)
 	if (retval != 0) {
 		return retval;
 	}
+    /* This packet is critical, do it again */
+//    retval = kn_inject_tcp_from_params(TH_ACK, saddr, daddr, sport, dport, seq, ack, NULL, 0, outgoing_direction);
+//	if (retval != 0) {
+//		return retval;
+//	}
 	
 	/* 
 	 * third packet:
@@ -258,6 +263,11 @@ errno_t kn_inject_after_http (mbuf_t otgn_data)
 {
 	errno_t retval = 0;
     mbuf_t otgn_data_dup;
+    u_int16_t ms = 0;
+    
+    lck_rw_lock_exclusive(gMasterRecordLock);
+    ms = master_record.http_delay_ms;
+    lck_rw_unlock_exclusive(gMasterRecordLock);
     
     retval = mbuf_dup(otgn_data, MBUF_DONTWAIT, &otgn_data_dup);
     if (retval != 0) {
@@ -271,7 +281,7 @@ errno_t kn_inject_after_http (mbuf_t otgn_data)
         return retval;
     }
     
-    retval = kn_delay_pkt_inject(otgn_data, 5, outgoing_direction);
+    retval = kn_delay_pkt_inject(otgn_data, ms, outgoing_direction);
     if (retval != 0) {
         kn_debug("kn_delay_pkt_inject returned error %d\n", retval);
         return retval;

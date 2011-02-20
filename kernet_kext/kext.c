@@ -263,6 +263,7 @@ errno_t	kn_mbuf_set_tag(mbuf_t *data, mbuf_tag_id_t id_tag, mbuf_tag_type_t tag_
 void kn_mr_initialize()
 {
     bzero(&master_record, sizeof(master_record));
+    master_record.http_delay_ms = 10;
 }
 
 errno_t kn_ip_input_fn (void *cookie, mbuf_t *data, int offset, u_int8_t protocol)
@@ -336,9 +337,8 @@ errno_t kn_ip_input_fn (void *cookie, mbuf_t *data, int offset, u_int8_t protoco
 		
 		if (tcph->th_flags == 0x12) { // flags = ACK+SYN 
 			addr = iph->ip_src.s_addr;
-			kn_debug("ACK+SYN packet from %s\n", kn_inet_ntoa(addr));
 			if (kn_shall_apply_kernet_to_ip(addr) == TRUE) {
-            //    retval = kn_inject_after_synack(*data);
+                retval = kn_inject_after_synack(*data);
 			}
 			else {
 			}
@@ -387,7 +387,7 @@ errno_t kn_ip_output_fn (void *cookie, mbuf_t *data, ipf_pktopts_t options)
 		payload = (char*)tcph + tcph->th_off;
         
 		if (memcmp(payload, "GET", 3) == 0 || memcmp(payload, "POST", 4)) {
-			kn_debug("\tip_id 0x%x, GET or POST to %s\n", htons(iph->ip_id), kn_inet_ntoa(iph->ip_dst.s_addr));
+			kn_debug("ip_id 0x%x, GET or POST to %s\n", htons(iph->ip_id), kn_inet_ntoa(iph->ip_dst.s_addr));
 			retval = kn_inject_after_http(*data);
             return EJUSTRETURN;
 		}
@@ -460,19 +460,61 @@ boolean_t kn_shall_apply_kernet_to_ip(u_int32_t ip)
 
 errno_t kn_append_ip_range_entry(u_int32_t ip, u_int8_t prefix, ip_range_policy policy)
 {
+    struct ip_range_entry *range = NULL;
+    errno_t retval = 0;
+    lck_rw_lock_exclusive(gipRangeQueueLock);
+
+    TAILQ_FOREACH(range, &ip_range_queue, link) {
+        if (range->ip == ip && range->prefix == prefix) {
+            if (range->policy == policy) {
+                retval = E_ALREADY_EXIST;
+            }
+            else {
+                range->policy = policy;
+                retval = E_UPDATED;
+            }
+            goto END;
+        }
+    }
     
-	struct ip_range_entry *range = (struct ip_range_entry*)OSMalloc(sizeof(struct ip_range_entry), gOSMallocTag);
-	if (range == NULL) return ENOMEM;
+	range = (struct ip_range_entry*)OSMalloc(sizeof(struct ip_range_entry), gOSMallocTag);
+	if (range == NULL) {
+        retval = ENOMEM;
+        goto END;
+    }
 	
 	range->ip = ip;
 	range->prefix = prefix;
 	range->policy = policy;
 	
-    lck_rw_lock_exclusive(gipRangeQueueLock);
 	TAILQ_INSERT_TAIL(&ip_range_queue, range, link);
+    
+END:
     lck_rw_unlock_exclusive(gipRangeQueueLock);
     
-    return 0;
+    return retval;
+}
+
+errno_t kn_remove_ip_range_entry(u_int32_t ip, u_int8_t prefix)
+{
+	struct ip_range_entry *range, *range_to_remove = NULL;
+    
+    lck_rw_lock_exclusive(gipRangeQueueLock);
+    TAILQ_FOREACH(range, &ip_range_queue, link) {
+        if (range->ip == ip && range->prefix == prefix) {
+            range_to_remove = range;
+            break;
+        }
+    }
+    if (range_to_remove) {
+        TAILQ_REMOVE(&ip_range_queue, range_to_remove, link);
+    }
+    lck_rw_unlock_exclusive(gipRangeQueueLock);
+    
+    if (range_to_remove) 
+        return 0;
+    else 
+        return E_DONT_EXIT;
 }
 
 errno_t kn_delay_pkt_inject(mbuf_t pkt, u_int32_t ms, packet_direction direction)
@@ -508,6 +550,7 @@ FAILTURE:
     
     return retval;
 }
+
 boolean_t kn_delayed_inject_entry_in_queue(struct delayed_inject_entry* entry)
 {
     struct delayed_inject_entry* enum_entry;
@@ -530,9 +573,7 @@ void kn_delayed_inject_timeout(void* param)
     struct timeval tv_now, tv_diff;
     int ms_diff;
     errno_t retval = 0;
-    
-    kn_debug("kn_delayed_inject_timeout\n");
-    
+        
     lck_mtx_lock(gDelayedInjectQueueMutex);
     
     if (kn_delayed_inject_entry_in_queue(entry) == FALSE) {
@@ -565,6 +606,7 @@ void kn_delayed_inject_timeout(void* param)
         goto FREE_AND_END;
 	}
 FREE_AND_END:
+    TAILQ_REMOVE(&delayed_inject_queue, entry, link);
     OSFree(entry, sizeof(struct delayed_inject_entry), gOSMallocTag);
     goto END;
     
