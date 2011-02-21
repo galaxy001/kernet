@@ -4,6 +4,16 @@
 <dict>
 	<key>SchemeUserState</key>
 	<dict>
+		<key>KerDNS.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>2</integer>
+		</dict>
+		<key>kerdns.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>3</integer>
+		</dict>
 		<key>kernet.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
@@ -28,6 +38,16 @@
 			<true/>
 		</dict>
 		<key>741248C8130E03EA00715730</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>74DAA09913125DE800BE59FD</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>74DAA0A713125DFB00BE59FD</key>
 		<dict>
 			<key>primary</key>
 			<true/>

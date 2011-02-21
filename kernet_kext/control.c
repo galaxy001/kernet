@@ -173,7 +173,7 @@ errno_t kn_ctl_parse_request(mbuf_t data)
             return EBADMSG;
         }
         
-        retval = kn_append_ip_range_entry(opt_req->ip, opt_req->prefix, r_policy);
+        retval = kn_append_ip_range_entry(opt_req->ip, opt_req->prefix, opt_req->port, r_policy);
         if (retval == E_ALREADY_EXIST) {
             kn_debug("req->id %d, optcode 0x%X tried to append existing range %s:%d\n", req->id, req->opt_code, kn_inet_ntoa(opt_req->ip), opt_req->prefix);
             kn_ctl_send_response(req->id, req->opt_code, E_ALREADY_EXIST);
@@ -204,7 +204,7 @@ errno_t kn_ctl_parse_request(mbuf_t data)
         
         opt_req = (struct remove_ip_range_req_t*)(buf + sizeof(struct request_t));
         
-        retval = kn_remove_ip_range_entry(opt_req->ip, opt_req->prefix);
+        retval = kn_remove_ip_range_entry(opt_req->ip, opt_req->prefix, opt_req->port);
         if (retval == E_DONT_EXIT) {
             kn_debug("req->id %d, optcode 0x%X tried to remove non-existing range %s:%d\n", req->id, req->opt_code, kn_inet_ntoa(opt_req->ip), opt_req->prefix);
             kn_ctl_send_response(req->id, req->opt_code, E_DONT_EXIT);

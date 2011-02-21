@@ -15,10 +15,21 @@
 		741248B3130E036B00715730 /* manipulator.c in Sources */ = {isa = PBXBuildFile; fileRef = 741248AB130E036B00715730 /* manipulator.c */; };
 		741248CD130E03EB00715730 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 741248CC130E03EB00715730 /* main.c */; };
 		741248D3130E058500715730 /* common.h in Headers */ = {isa = PBXBuildFile; fileRef = 741248A2130E036B00715730 /* common.h */; };
+		74DAA0AC13125DFB00BE59FD /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 74DAA0AB13125DFB00BE59FD /* main.c */; };
+		74DAA0B21312689400BE59FD /* libpcre.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 74DAA0B11312689400BE59FD /* libpcre.dylib */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		741248C7130E03EA00715730 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		74DAA0A613125DFB00BE59FD /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = /usr/share/man/man1/;
@@ -41,6 +52,9 @@
 		741248AB130E036B00715730 /* manipulator.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = manipulator.c; path = kernet_kext/manipulator.c; sourceTree = SOURCE_ROOT; };
 		741248C9130E03EA00715730 /* kernet_cli */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = kernet_cli; sourceTree = BUILT_PRODUCTS_DIR; };
 		741248CC130E03EB00715730 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
+		74DAA0A813125DFB00BE59FD /* kerdns */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = kerdns; sourceTree = BUILT_PRODUCTS_DIR; };
+		74DAA0AB13125DFB00BE59FD /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
+		74DAA0B11312689400BE59FD /* libpcre.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libpcre.dylib; path = SDKs/MacOSX10.6.sdk/usr/lib/libpcre.dylib; sourceTree = DEVELOPER_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -58,6 +72,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		74DAA0A513125DFB00BE59FD /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				74DAA0B21312689400BE59FD /* libpcre.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -66,6 +88,7 @@
 			children = (
 				74124890130E033600715730 /* kernet.kext */,
 				741248C9130E03EA00715730 /* kernet_cli */,
+				74DAA0A813125DFB00BE59FD /* kerdns */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -120,11 +143,21 @@
 		743EFCCA130DE8E800CD5B72 = {
 			isa = PBXGroup;
 			children = (
+				74DAA0B11312689400BE59FD /* libpcre.dylib */,
 				74124895130E033600715730 /* kernet_kext */,
 				741248CB130E03EA00715730 /* kernet_cli */,
+				74DAA0AA13125DFB00BE59FD /* kerdns */,
 				74124892130E033600715730 /* Frameworks */,
 				74124891130E033600715730 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		74DAA0AA13125DFB00BE59FD /* kerdns */ = {
+			isa = PBXGroup;
+			children = (
+				74DAA0AB13125DFB00BE59FD /* main.c */,
+			);
+			path = kerdns;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -188,6 +221,23 @@
 			productReference = 741248C9130E03EA00715730 /* kernet_cli */;
 			productType = "com.apple.product-type.tool";
 		};
+		74DAA0A713125DFB00BE59FD /* kerdns */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 74DAA0AE13125DFB00BE59FD /* Build configuration list for PBXNativeTarget "kerdns" */;
+			buildPhases = (
+				74DAA0A413125DFB00BE59FD /* Sources */,
+				74DAA0A513125DFB00BE59FD /* Frameworks */,
+				74DAA0A613125DFB00BE59FD /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = kerdns;
+			productName = kerdns;
+			productReference = 74DAA0A813125DFB00BE59FD /* kerdns */;
+			productType = "com.apple.product-type.tool";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -207,6 +257,7 @@
 			targets = (
 				7412488F130E033600715730 /* kernet_kext */,
 				741248C8130E03EA00715730 /* kernet_cli */,
+				74DAA0A713125DFB00BE59FD /* kerdns */,
 			);
 		};
 /* End PBXProject section */
@@ -247,6 +298,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				741248CD130E03EB00715730 /* main.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		74DAA0A413125DFB00BE59FD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				74DAA0AC13125DFB00BE59FD /* main.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -367,6 +426,47 @@
 			};
 			name = Release;
 		};
+		74DAA0AF13125DFB00BE59FD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				COPY_PHASE_STRIP = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = DEBUG;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.6;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		74DAA0B013125DFB00BE59FD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.6;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -396,6 +496,14 @@
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
+		};
+		74DAA0AE13125DFB00BE59FD /* Build configuration list for PBXNativeTarget "kerdns" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				74DAA0AF13125DFB00BE59FD /* Debug */,
+				74DAA0B013125DFB00BE59FD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
 		};
 /* End XCConfigurationList section */
 	};

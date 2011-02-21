@@ -293,36 +293,37 @@ errno_t kn_inject_after_http (mbuf_t otgn_data)
 void kn_fulfill_ip_ranges()
 {
 	// Google
-	kn_append_ip_range_entry((67305984), 24, ip_range_apply_kernet);   //	4.3.2.0/24
-	kn_append_ip_range_entry((134623232), 24, ip_range_apply_kernet);  //	8.6.48.0/21
-	kn_append_ip_range_entry((134743040), 24, ip_range_apply_kernet);  //	8.8.4.0/24
-	kn_append_ip_range_entry((134744064), 24, ip_range_apply_kernet);  //	8.8.8.0/24
-	kn_append_ip_range_entry((1078218752), 21, ip_range_apply_kernet); //	64.68.80.0/21
-	kn_append_ip_range_entry((1078220800), 21, ip_range_apply_kernet); //	64.68.88.0/21
-	kn_append_ip_range_entry((1089052672), 19, ip_range_apply_kernet); //	64.233.160.0/19
-	kn_append_ip_range_entry((1113980928), 20, ip_range_apply_kernet); //	66.102.0.0/20
-	kn_append_ip_range_entry((1123631104), 19, ip_range_apply_kernet); //	66.249.64.0/19
-	kn_append_ip_range_entry((1208926208), 18, ip_range_apply_kernet); //	72.14.192.0/18
-	kn_append_ip_range_entry((1249705984), 16, ip_range_apply_kernet); //	74.125.0.0/16
-	kn_append_ip_range_entry((2915172352), 16, ip_range_apply_kernet); //	173.194.0.0/16
-	kn_append_ip_range_entry((3512041472), 17, ip_range_apply_kernet); //	209.85.128.0/17
-	kn_append_ip_range_entry((3639549952), 19, ip_range_apply_kernet); //	216.239.32.0/19
+	kn_append_ip_range_entry_default_ports(htonl(67305984), 24, ip_range_apply_kernet);   //	4.3.2.0/24
+	kn_append_ip_range_entry_default_ports(htonl(134623232), 24, ip_range_apply_kernet);  //	8.6.48.0/21
+	kn_append_ip_range_entry_default_ports(htonl(134743040), 24, ip_range_apply_kernet);  //	8.8.4.0/24
+	kn_append_ip_range_entry_default_ports(htonl(134744064), 24, ip_range_apply_kernet);  //	8.8.8.0/24
+	kn_append_ip_range_entry_default_ports(htonl(1078218752), 21, ip_range_apply_kernet); //	64.68.80.0/21
+	kn_append_ip_range_entry_default_ports(htonl(1078220800), 21, ip_range_apply_kernet); //	64.68.88.0/21
+	kn_append_ip_range_entry_default_ports(htonl(1089052672), 19, ip_range_apply_kernet); //	64.233.160.0/19
+	kn_append_ip_range_entry_default_ports(htonl(1113980928), 20, ip_range_apply_kernet); //	66.102.0.0/20
+	kn_append_ip_range_entry_default_ports(htonl(1123631104), 19, ip_range_apply_kernet); //	66.249.64.0/19
+	kn_append_ip_range_entry_default_ports(htonl(1208926208), 18, ip_range_apply_kernet); //	72.14.192.0/18
+	kn_append_ip_range_entry_default_ports(htonl(1249705984), 16, ip_range_apply_kernet); //	74.125.0.0/16
+	kn_append_ip_range_entry_default_ports(htonl(2915172352), 16, ip_range_apply_kernet); //	173.194.0.0/16
+	kn_append_ip_range_entry_default_ports(htonl(3512041472), 17, ip_range_apply_kernet); //	209.85.128.0/17
+	kn_append_ip_range_entry_default_ports(htonl(3639549952), 19, ip_range_apply_kernet); //	216.239.32.0/19
 	
 	// Wikipedia
-	kn_append_ip_range_entry((3494942720), 22, ip_range_apply_kernet); //	208.80.152.0/22
+	kn_append_ip_range_entry_default_ports(htonl(3494942720), 22, ip_range_apply_kernet); //	208.80.152.0/22
 	
 	// Pornhub
-	kn_append_ip_range_entry((2454899747), 32, ip_range_apply_kernet); //	146.82.204.35/32
+	kn_append_ip_range_entry_default_ports(htonl(2454899747), 32, ip_range_apply_kernet); //	146.82.204.35/32
 	
 	// Just-Ping
-	kn_append_ip_range_entry((1161540560), 32, ip_range_apply_kernet);	//	69.59.179.208/32
+	kn_append_ip_range_entry_default_ports(htonl(1161540560), 32, ip_range_apply_kernet);	//	69.59.179.208/32
 	
 	// Dropbox
-	kn_append_ip_range_entry((3492530741), 32, ip_range_apply_kernet);	//	208.43.202.53/32
-	kn_append_ip_range_entry((2921607977), 32, ip_range_apply_kernet);	//	174.36.51.41/32
+	kn_append_ip_range_entry_default_ports(htonl(3492530741), 32, ip_range_apply_kernet);	//	208.43.202.53/32
+	kn_append_ip_range_entry_default_ports(htonl(2921607977), 32, ip_range_apply_kernet);	//	174.36.51.41/32
 	
 	// Twitter
-	kn_append_ip_range_entry((2163406116), 32, ip_range_apply_kernet); //	128.242.245.36/32
+	kn_append_ip_range_entry_default_ports(htonl(2163406116), 32, ip_range_apply_kernet); //	128.242.245.36/32
+    kn_append_ip_range_entry_default_ports(htonl(2916408726), 32, ip_range_apply_kernet); //     173.212.221.150/32
     
 }
 
@@ -476,7 +477,7 @@ errno_t kn_inject_tcp_from_params(u_int8_t tcph_flags, u_int32_t iph_saddr, u_in
         return retval;
     }
 	else {
-		kn_debug("injected tcp packet, flags: 0x%X, saddr: %s, daddr: %s, ack: %u, seq: %u\n", tcph_flags, kn_inet_ntoa(iph_saddr), kn_inet_ntoa(iph_daddr), tcph_ack, tcph_seq);
+		kn_debug("injected tcp packet, flags: 0x%X, src: %s:%d, dst: %s:%d, ack: %u, seq: %u\n", tcph_flags, kn_inet_ntoa(iph_saddr), ntohs(tcph_sport), kn_inet_ntoa(iph_daddr), ntohs(tcph_dport), tcph_ack, tcph_seq);
 	}	
     
     return 0;

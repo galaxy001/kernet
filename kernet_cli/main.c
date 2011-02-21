@@ -17,7 +17,7 @@
 static int gSocket = -1;
 static u_int32_t req_seq;
 
-void append_ip_range(const char* ip, int prefix)
+void append_ip_range(const char* ip, int prefix, int port)
 {
     struct in_addr addr;
     char buf[sizeof(struct request_t) + sizeof(struct append_ip_range_req_t)];
@@ -36,6 +36,7 @@ void append_ip_range(const char* ip, int prefix)
     opt_req->ip = addr.s_addr;
     opt_req->prefix = prefix;
     opt_req->policy = IP_RANGE_POLICY_APPLY;
+    opt_req->port = htons(port);
     
     if (send(gSocket, buf, sizeof(struct request_t) + sizeof(struct append_ip_range_req_t), 0) < 0) {
         perror("send");
@@ -100,7 +101,11 @@ int main (int argc, const char * argv[])
 		exit(0);
 	}
     
-    append_ip_range("203.69.138.33", 32); /* akamai hinet node */
+    //append_ip_range("203.69.138.33", 32); /* akamai hinet node */
+    append_ip_range("173.212.221.150", 32, 0);
+    append_ip_range("4.3.2.0", 24, 0);
+    append_ip_range("8.6.48.0", 21, 0);
+
     
     recv_print_response();
     

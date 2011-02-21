@@ -29,6 +29,7 @@ typedef enum _packet_irection {
 struct ip_range_entry {
 	u_int32_t	ip;
 	u_int8_t	prefix;
+    u_int16_t port;
 	ip_range_policy	policy;
 	
 	TAILQ_ENTRY(ip_range_entry) link;
@@ -99,9 +100,11 @@ errno_t kn_sflt_data_in_fn (void *cookie,socket_t so, const struct sockaddr *fro
 errno_t kn_sflt_data_out_fn (void *cookie, socket_t so, const struct sockaddr *to, mbuf_t *data, mbuf_t *control, sflt_data_flag_t flags);  
 
 // ip range:
-boolean_t kn_shall_apply_kernet_to_ip(u_int32_t ip);
-errno_t kn_append_ip_range_entry(u_int32_t ip, u_int8_t prefix, ip_range_policy policy);
-errno_t kn_remove_ip_range_entry(u_int32_t ip, u_int8_t prefix);
+boolean_t kn_shall_apply_kernet_to_host(u_int32_t ip, u_int16_t port);
+errno_t kn_append_ip_range_entry(u_int32_t ip, u_int8_t prefix, u_int16_t port, ip_range_policy policy);
+errno_t kn_append_ip_range_entry_default_ports(u_int32_t ip, u_int8_t prefix, ip_range_policy policy);
+errno_t kn_remove_ip_range_entry(u_int32_t ip, u_int8_t prefix, u_int16_t port);
+errno_t kn_remove_ip_range_entry_default_ports(u_int32_t ip, u_int8_t prefix);
 void kn_fulfill_ip_ranges();
 
 // manipulator: 

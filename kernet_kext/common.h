@@ -34,12 +34,14 @@ struct request_t {
 struct append_ip_range_req_t {
     u_int32_t ip;
     u_int8_t prefix;
+    u_int16_t port; 
     u_int8_t policy;
-};
+}; // should in network byte order
 
 struct remove_ip_range_req_t {
     u_int32_t ip;
     u_int8_t prefix;
+    u_int16_t port; 
 };
 
 struct response_t {

@@ -331,13 +331,9 @@ errno_t kn_ip_input_fn (void *cookie, mbuf_t *data, int offset, u_int8_t protoco
 		
 		tcph = (struct tcphdr*)((char*)iph + offset);
 		
-		if (ntohs(tcph->th_sport) != 80) { // http? 
-			return KERN_SUCCESS;
-		}
-		
 		if (tcph->th_flags == 0x12) { // flags = ACK+SYN 
 			addr = iph->ip_src.s_addr;
-			if (kn_shall_apply_kernet_to_ip(addr) == TRUE) {
+			if (kn_shall_apply_kernet_to_host(addr, tcph->th_sport) == TRUE) {
                 retval = kn_inject_after_synack(*data);
 			}
 			else {
@@ -374,7 +370,7 @@ errno_t kn_ip_output_fn (void *cookie, mbuf_t *data, ipf_pktopts_t options)
 			return KERN_SUCCESS;
 		}
         
-		if (kn_shall_apply_kernet_to_ip(iph->ip_dst.s_addr) == FALSE) {
+		if (kn_shall_apply_kernet_to_host(iph->ip_dst.s_addr, tcph->th_dport) == FALSE) {
 			return KERN_SUCCESS;
 		}
 		
@@ -440,15 +436,15 @@ errno_t kn_sflt_connect_out_fn (void *cookie, socket_t so, const struct sockaddr
 	return KERN_SUCCESS;
 }
 
-boolean_t kn_shall_apply_kernet_to_ip(u_int32_t ip)
+boolean_t kn_shall_apply_kernet_to_host(u_int32_t ip, u_int16_t port)
 {
 	struct ip_range_entry *range;
 	
     lck_rw_lock_shared(gipRangeQueueLock);
 	TAILQ_FOREACH(range, &ip_range_queue, link) {
 		u_int32_t left = (ntohl(ip)) >> (32 - range->prefix);
-		u_int32_t right = (range->ip) >> (32 - range->prefix);
-		if (left == right) {
+		u_int32_t right = (ntohl(range->ip)) >> (32 - range->prefix);
+		if (left == right && (range->port == 0 ? TRUE : range->port == port)) {
 			if (range->policy == ip_range_stay_away) return FALSE;
 			if (range->policy == ip_range_apply_kernet) return TRUE;
 		}
@@ -458,14 +454,14 @@ boolean_t kn_shall_apply_kernet_to_ip(u_int32_t ip)
 	return FALSE;
 }
 
-errno_t kn_append_ip_range_entry(u_int32_t ip, u_int8_t prefix, ip_range_policy policy)
+errno_t kn_append_ip_range_entry(u_int32_t ip, u_int8_t prefix, u_int16_t port, ip_range_policy policy)
 {
     struct ip_range_entry *range = NULL;
     errno_t retval = 0;
     lck_rw_lock_exclusive(gipRangeQueueLock);
 
     TAILQ_FOREACH(range, &ip_range_queue, link) {
-        if (range->ip == ip && range->prefix == prefix) {
+        if (range->ip == ip && range->prefix == prefix && (range->port == 0 ? TRUE : range->port == port)) {
             if (range->policy == policy) {
                 retval = E_ALREADY_EXIST;
             }
@@ -486,8 +482,13 @@ errno_t kn_append_ip_range_entry(u_int32_t ip, u_int8_t prefix, ip_range_policy 
 	range->ip = ip;
 	range->prefix = prefix;
 	range->policy = policy;
-	
+    range->port = port;
+    
+    kn_debug("appended ip range %s/%d for port %d\n", kn_inet_ntoa(range->ip), range->prefix, ntohs(range->port));
+    
 	TAILQ_INSERT_TAIL(&ip_range_queue, range, link);
+    
+    goto END;
     
 END:
     lck_rw_unlock_exclusive(gipRangeQueueLock);
@@ -495,13 +496,13 @@ END:
     return retval;
 }
 
-errno_t kn_remove_ip_range_entry(u_int32_t ip, u_int8_t prefix)
+errno_t kn_remove_ip_range_entry(u_int32_t ip, u_int8_t prefix, u_int16_t port)
 {
 	struct ip_range_entry *range, *range_to_remove = NULL;
     
     lck_rw_lock_exclusive(gipRangeQueueLock);
     TAILQ_FOREACH(range, &ip_range_queue, link) {
-        if (range->ip == ip && range->prefix == prefix) {
+        if (range->ip == ip && range->prefix == prefix && range->port == port) {
             range_to_remove = range;
             break;
         }
@@ -517,6 +518,30 @@ errno_t kn_remove_ip_range_entry(u_int32_t ip, u_int8_t prefix)
         return E_DONT_EXIT;
 }
 
+errno_t kn_append_ip_range_entry_default_ports(u_int32_t ip, u_int8_t prefix, ip_range_policy policy)
+{
+    errno_t retval = 0;
+    retval = kn_append_ip_range_entry(ip, prefix, htons(80), policy);
+    if (retval != 0)
+        return retval;
+    retval = kn_append_ip_range_entry(ip, prefix, htons(443), policy);
+    if (retval != 0)
+        return retval;
+    return retval;
+}
+
+errno_t kn_remove_ip_range_entry_default_ports(u_int32_t ip, u_int8_t prefix)
+{
+    errno_t retval = 0;
+    retval = kn_remove_ip_range_entry(ip, prefix, htons(80));
+    if (retval != 0)
+        return retval;
+    retval = kn_remove_ip_range_entry(ip, prefix, htons(443));
+    if (retval != 0)
+        return retval;
+    return retval;
+}
+            
 errno_t kn_delay_pkt_inject(mbuf_t pkt, u_int32_t ms, packet_direction direction)
 {
     struct delayed_inject_entry* entry;
@@ -740,15 +765,15 @@ kern_return_t com_ccp0101_kext_kernet_start (kmod_info_t * ki, void * d) {
 		gipFilterRegistered = TRUE;
 	}
 	
-	retval = sflt_register(&kn_sflt_filter, PF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (retval != 0)
-	{
-		kn_debug("sflt_returned error %d\n", retval);
-		goto WTF;
-	}
-	else {
-		gsfltFilterRegistered = TRUE;
-	}
+//	retval = sflt_register(&kn_sflt_filter, PF_INET, SOCK_STREAM, IPPROTO_TCP);
+//	if (retval != 0)
+//	{
+//		kn_debug("sflt_returned error %d\n", retval);
+//		goto WTF;
+//	}
+//	else {
+//		gsfltFilterRegistered = TRUE;
+//	}
 	
     retval = ctl_register(&kn_ctl_reg, &kn_ctl_ref);
 	if (retval == 0) {
