@@ -75,6 +75,11 @@ int main (int argc, const char * argv[])
     
     req_seq = 7936151;
     
+    if (argc != 2) {
+        printf("missing IP address argument.\n");
+        return 1;
+    }
+        
     gSocket = socket(PF_SYSTEM, SOCK_DGRAM, SYSPROTO_CONTROL);
     if (gSocket < 0) {
         perror("socket SYSPROTO_CONTROL");
@@ -100,13 +105,8 @@ int main (int argc, const char * argv[])
 		perror("connect");
 		exit(0);
 	}
-    
-    //append_ip_range("203.69.138.33", 32); /* akamai hinet node */
-    append_ip_range("173.212.221.150", 32, 0);
-    append_ip_range("4.3.2.0", 24, 0);
-    append_ip_range("8.6.48.0", 21, 0);
+    append_ip_range(argv[1], 32, 0);
 
-    
     recv_print_response();
     
     close(gSocket);

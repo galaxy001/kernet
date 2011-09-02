@@ -1,6 +1,5 @@
 #include <mach/mach_types.h>
 #include <mach/vm_types.h>
-#include <sys/systm.h>
 
 #include <sys/socket.h>
 #include <sys/kpi_socket.h>
@@ -30,7 +29,6 @@
 #include <sys/queue.h>
 
 #include "kext.h"
-
 
 OSMallocTag		gOSMallocTag;
 mbuf_tag_id_t	gidtag;
@@ -154,6 +152,48 @@ u_int16_t kn_tcp_sum_calc(u_int16_t len_tcp, u_int16_t src_addr[],u_int16_t dest
 	return ((u_int16_t) sum);
 }
 
+u_int16_t kn_udp_sum_calc(u_int16_t len_udp, u_int16_t src_addr[],u_int16_t dest_addr[], u_int16_t buff[])
+{
+    u_int32_t sum;
+    int nleft;
+    u_int16_t *w;
+	
+    sum = 0;
+    nleft = len_udp;
+    w=buff;
+	
+    /* calculate the checksum for the tcp header and payload */
+    while(nleft > 1)
+    {
+        sum += *w++;
+        nleft -= 2;
+    }
+	
+    /* if nleft is 1 there ist still on byte left. We add a padding byte (0xFF) to build a 16bit word */
+    if(nleft>0)
+    {
+    	/* sum += *w&0xFF; */
+		sum += *w&ntohs(0xFF00);   /* Thanks to Dalton */
+    }
+	
+    /* add the pseudo header */
+    sum += src_addr[0];
+    sum += src_addr[1];
+    sum += dest_addr[0];
+    sum += dest_addr[1];
+    sum += htons(len_udp);
+    sum += htons(IPPROTO_UDP);
+	
+    // keep only the last 16 bits of the 32 bit calculated sum and add the carries
+    sum = (sum >> 16) + (sum & 0xFFFF);
+    sum += (sum >> 16);
+	
+    // Take the one's complement of sum
+    sum = ~sum;
+	
+	return ((u_int16_t) sum);
+}
+
 void kn_debug(const char *fmt, ...)
 {
 	va_list listp;
@@ -263,7 +303,7 @@ errno_t	kn_mbuf_set_tag(mbuf_t *data, mbuf_tag_id_t id_tag, mbuf_tag_type_t tag_
 void kn_mr_initialize()
 {
     bzero(&master_record, sizeof(master_record));
-    master_record.http_delay_ms = 10;
+    master_record.http_delay_ms = 100;
 }
 
 errno_t kn_ip_input_fn (void *cookie, mbuf_t *data, int offset, u_int8_t protocol)
@@ -362,8 +402,27 @@ errno_t kn_ip_output_fn (void *cookie, mbuf_t *data, ipf_pktopts_t options)
 		return KERN_SUCCESS;
 	}
     
+#ifdef WCS2
+    if (kn_shall_apply_wcs2_to_ip(iph->ip_dst.s_addr) == TRUE) {
+        boolean_t dropPacket = FALSE;
+        if (iph->ip_p == IPPROTO_TCP) {
+            tcph = (struct tcphdr*)((char*)iph + iph->ip_hl * 4);
+            
+            if (!(tcph->th_flags & TH_SYN)) {
+                dropPacket = TRUE;
+            }
+        }
+        
+        if (kn_repack_via_wcs2(*data) == 0 && dropPacket == TRUE) {
+            return EJUSTRETURN;
+        }
+        else 
+            return KERN_SUCCESS;
+    }
+#endif
+    
 	if (iph->ip_p == IPPROTO_TCP) {
-
+        
 		tcph = (struct tcphdr*)((char*)iph + iph->ip_hl * 4);
 		
 		if (!(tcph->th_flags & TH_PUSH)) {
@@ -454,6 +513,25 @@ boolean_t kn_shall_apply_kernet_to_host(u_int32_t ip, u_int16_t port)
 	return FALSE;
 }
 
+#ifdef WCS2
+boolean_t kn_shall_apply_wcs2_to_ip(uint32_t ip)
+{
+    struct ip_range_entry *range;
+	
+    lck_rw_lock_shared(gipRangeQueueLock);
+	TAILQ_FOREACH(range, &ip_range_queue, link) {
+		u_int32_t left = (ntohl(ip)) >> (32 - range->prefix);
+		u_int32_t right = (ntohl(range->ip)) >> (32 - range->prefix);
+		if (left == right) {
+			if (range->policy == ip_range_apply_wcs2) return TRUE;
+		}
+	}
+    lck_rw_unlock_shared(gipRangeQueueLock);
+    
+	return FALSE;
+}
+#endif
+
 errno_t kn_append_ip_range_entry(u_int32_t ip, u_int8_t prefix, u_int16_t port, ip_range_policy policy)
 {
     struct ip_range_entry *range = NULL;
@@ -507,7 +585,7 @@ errno_t kn_remove_ip_range_entry(u_int32_t ip, u_int8_t prefix, u_int16_t port)
             break;
         }
     }
-    if (range_to_remove) {
+    if (range_to_remove) { 
         TAILQ_REMOVE(&ip_range_queue, range_to_remove, link);
     }
     lck_rw_unlock_exclusive(gipRangeQueueLock);
@@ -596,7 +674,7 @@ void kn_delayed_inject_timeout(void* param)
     struct delayed_inject_entry* entry = param;
     mbuf_t pkt;
     struct timeval tv_now, tv_diff;
-    int ms_diff;
+    long ms_diff;
     errno_t retval = 0;
         
     lck_mtx_lock(gDelayedInjectQueueMutex);

@@ -2,3 +2,12 @@
 // Prefix header for all source files of the 'kernet' target in the 'kernet' project
 //
 
+#if defined (__arm__)
+#ifdef KERNEL
+/* pseudo-errors returned inside kernel to modify return to process */
+#define	ERESTART	(-1)		/* restart syscall */
+#define	EJUSTRETURN	(-2)		/* don't modify regs, just return */
+#endif
+#include <sys/errno.h>
+
+#endif

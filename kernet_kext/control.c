@@ -1,6 +1,5 @@
 #include <mach/mach_types.h>
 #include <mach/vm_types.h>
-#include <sys/systm.h>
 
 #include <sys/socket.h>
 #include <sys/kpi_socket.h>
@@ -130,7 +129,7 @@ errno_t kn_ctl_parse_request(mbuf_t data)
 {
     errno_t retval = 0;
     
-    u_int32_t tot_len;
+    long tot_len;
     struct request_t *req;
     u_int16_t expected_len = sizeof(struct request_t);
     char *buf;

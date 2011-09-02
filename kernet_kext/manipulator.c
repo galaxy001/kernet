@@ -1,6 +1,5 @@
 #include <mach/mach_types.h>
 #include <mach/vm_types.h>
-#include <sys/systm.h>
 
 #include <sys/socket.h>
 #include <sys/kpi_socket.h>
@@ -31,134 +30,6 @@
 #include <sys/queue.h>
 
 #include "kext.h"
-
-/* data_offset = offset of the fragmented second packet without IP header counted in */
-/* not functioning ! */
-static errno_t kn_fragment_pkt_to_two_pieces(mbuf_t orgn_pkt, mbuf_t *pkt1, mbuf_t *pkt2, u_int16_t data_offset)
-{
-    struct ip* iph;
-    u_int16_t tot_len;
-    u_int16_t pkt1_len;
-    u_int16_t pkt2_len;
-    boolean_t pkt1_allocated = FALSE;
-    boolean_t pkt2_allocated = FALSE;
-    errno_t retval = 0;
-    char *pkt1_buf, *pkt2_buf, *orgn_buf;
-    mbuf_csum_request_flags_t csum_flags = 0;
-    int orgn_ip_hl = iph->ip_hl * 4;
-    u_int16_t ip_id = 0x2912;
-    
-    if (data_offset % 8 != 0) {
-        kn_debug("data_offset % 8 != 0\n");
-        goto FAILURE;
-    }
-    
-    iph = (struct ip*)mbuf_data(orgn_pkt);
-    tot_len = ntohs(iph->ip_len);
-    pkt1_len = orgn_ip_hl + data_offset;
-    pkt2_len = tot_len - orgn_ip_hl - data_offset + sizeof(struct ip);
-    
-    if (data_offset < tot_len - orgn_ip_hl) {
-        kn_debug("unable to fragment a packet because offset too small\n");
-        goto FAILURE;
-    }
-    retval = mbuf_allocpacket(MBUF_DONTWAIT, pkt1_len, NULL, pkt1);
-	if (retval != 0) {
-		kn_debug("mbuf_allocpacket returned error %d\n", retval);
-		goto FAILURE;
-	}
-    else {
-        pkt1_allocated = TRUE;
-    }
-    
-    retval = mbuf_allocpacket(MBUF_DONTWAIT, pkt2_len, NULL, pkt2);
-	if (retval != 0) {
-		kn_debug("mbuf_allocpacket returned error %d\n", retval);
-		goto FAILURE;
-	}
-    else {
-        pkt2_allocated = TRUE;
-    }
-	
-	mbuf_pkthdr_setlen(*pkt1, pkt1_len);
-	retval = mbuf_pkthdr_setrcvif(*pkt1, NULL);
-	if (retval != 0) {
-		kn_debug("mbuf_pkthdr_setrcvif returned error %d\n", retval);
-        goto FAILURE;
-	}
-	
-	mbuf_setlen(*pkt1, pkt1_len);
-	
-	retval = mbuf_setdata(*pkt1, (mbuf_datastart(*pkt1)), pkt1_len);
-	if (retval != 0) {
-		kn_debug("mbuf_setdata returned error %d\n", retval);
-        goto FAILURE;
-	}
-	
-    mbuf_pkthdr_setheader(*pkt1, mbuf_data(*pkt1));
-    
-    mbuf_pkthdr_setlen(*pkt2, pkt2_len);
-	retval = mbuf_pkthdr_setrcvif(*pkt2, NULL);
-	if (retval != 0) {
-		kn_debug("mbuf_pkthdr_setrcvif returned error %d\n", retval);
-        goto FAILURE;
-	}
-	
-	mbuf_setlen(*pkt2, pkt2_len);
-	
-	retval = mbuf_setdata(*pkt2, (mbuf_datastart(*pkt2)), pkt2_len);
-	if (retval != 0) {
-		kn_debug("mbuf_setdata returned error %d\n", retval);
-        goto FAILURE;
-	}
-	
-    mbuf_pkthdr_setheader(*pkt2, mbuf_data(*pkt2));
-    
-    pkt1_buf = mbuf_data(*pkt1);
-    pkt2_buf = mbuf_data(*pkt2);
-    memcpy(pkt1_buf, orgn_buf, data_offset + orgn_ip_hl);
-    memcpy(pkt2_buf, orgn_buf, sizeof(struct ip));
-    memcpy(pkt2_buf + sizeof(struct ip), orgn_buf + orgn_ip_hl + data_offset, pkt2_len - sizeof(struct ip));
-    
-    iph = (struct ip*)pkt1_buf;
-    iph->ip_off = 0;
-    iph->ip_off = iph->ip_off | IP_MF;
-    iph->ip_len = htons(pkt1_len);
-    iph->ip_id  = htons(ip_id);
-    
-    mbuf_clear_csum_performed(*pkt1);
-	
-	csum_flags |= MBUF_CSUM_REQ_IP;
-	retval = mbuf_get_csum_requested(*pkt1, &csum_flags, NULL);
-	if (retval != 0) {
-		kn_debug("mbuf_get_csum_requested returned error %d\n", retval);
-        goto FAILURE;
-	}
-    
-    iph = (struct ip*)pkt2_buf;
-    iph->ip_off = data_offset / 8;
-    iph->ip_len = htons(pkt2_len);
-    iph->ip_id  = htons(ip_id);
-    
-    mbuf_clear_csum_performed(*pkt2);
-    
-    csum_flags = 0;
-	csum_flags |= MBUF_CSUM_REQ_IP;
-	retval = mbuf_get_csum_requested(*pkt2, &csum_flags, NULL);
-	if (retval != 0) {
-		kn_debug("mbuf_get_csum_requested returned error %d\n", retval);
-        goto FAILURE;
-	}
-    
-    return 0;
-    
-FAILURE:
-    if (pkt1_allocated == TRUE)
-        mbuf_free(*pkt1);
-    if (pkt2_allocated == TRUE) 
-        mbuf_free(*pkt2);
-    return retval;
-}
 
 errno_t kn_inject_after_synack (mbuf_t incm_data)
 {
@@ -255,7 +126,17 @@ errno_t kn_inject_after_synack (mbuf_t incm_data)
 	if (retval != 0) {
 		return retval;
 	}
-	
+
+    retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, NULL, 0, outgoing_direction);
+	if (retval != 0) {
+		return retval;
+	}
+
+    retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, NULL, 0, outgoing_direction);
+	if (retval != 0) {
+		return retval;
+	}
+    
 	return KERN_SUCCESS;
 }
 
@@ -323,8 +204,6 @@ void kn_fulfill_ip_ranges()
 	
 	// Twitter
 	kn_append_ip_range_entry_default_ports(htonl(2163406116), 32, ip_range_apply_kernet); //	128.242.245.36/32
-    kn_append_ip_range_entry_default_ports(htonl(2916408726), 32, ip_range_apply_kernet); //     173.212.221.150/32
-    
 }
 
 
@@ -457,6 +336,12 @@ errno_t kn_inject_tcp_from_params(u_int8_t tcph_flags, u_int32_t iph_saddr, u_in
     retval = kn_tcp_pkt_from_params(&pkt, tcph_flags, iph_saddr, iph_daddr, tcph_sport, tcph_dport, tcph_seq, tcph_ack, payload, payload_len);
     if (retval != 0) {
         kn_debug("kn_tcp_pkt_from_params returned error %d\n", retval);
+        return retval;
+    }
+    
+    retval = kn_mbuf_set_tag(&pkt, gidtag, kMY_TAG_TYPE, outgoing_direction);
+    if (retval != 0) {
+        kn_debug("kn_mbuf_set_tag returned error %d\n", retval);
         return retval;
     }
     
