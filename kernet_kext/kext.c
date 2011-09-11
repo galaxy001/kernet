@@ -443,7 +443,7 @@ errno_t kn_ip_output_fn (void *cookie, mbuf_t *data, ipf_pktopts_t options)
         
 		if (memcmp(payload, "GET", 3) == 0 || memcmp(payload, "POST", 4)) {
 			kn_debug("ip_id 0x%x, GET or POST to %s\n", htons(iph->ip_id), kn_inet_ntoa(iph->ip_dst.s_addr));
-			retval = kn_inject_after_http(*data);
+			retval = kn_delayed_reinject(*data);
             return EJUSTRETURN;
 		}
 	}
@@ -468,8 +468,6 @@ void kn_sflt_notify_fn (void *cookie, socket_t so, sflt_event_t event, void *par
 {
 	if (event == sock_evt_connected) {
 		kn_debug("notified that so 0x%X has connected.\n", so);
-		//		kn_inject_kernet_from_so(so);
-        //sflt_detach(so, KERNET_HANDLE);
 	}
 }
 
@@ -843,15 +841,15 @@ kern_return_t com_ccp0101_kext_kernet_start (kmod_info_t * ki, void * d) {
 		gipFilterRegistered = TRUE;
 	}
 	
-//	retval = sflt_register(&kn_sflt_filter, PF_INET, SOCK_STREAM, IPPROTO_TCP);
-//	if (retval != 0)
-//	{
-//		kn_debug("sflt_returned error %d\n", retval);
-//		goto WTF;
-//	}
-//	else {
-//		gsfltFilterRegistered = TRUE;
-//	}
+	retval = sflt_register(&kn_sflt_filter, PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (retval != 0)
+	{
+		kn_debug("sflt_returned error %d\n", retval);
+		goto WTF;
+	}
+	else {
+		gsfltFilterRegistered = TRUE;
+	}
 	
     retval = ctl_register(&kn_ctl_reg, &kn_ctl_ref);
 	if (retval == 0) {

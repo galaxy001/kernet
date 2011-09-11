@@ -64,7 +64,7 @@ errno_t kn_inject_after_synack (mbuf_t incm_data)
 	seq = htonl(ntohl(tcph->th_ack) - 1);
 	ack = tcph->th_seq;
 	
-	retval = kn_inject_tcp_from_params(TH_RST, saddr, daddr, sport, dport, seq, ack, NULL, 0, outgoing_direction);
+	retval = kn_inject_tcp_from_params(TH_RST, saddr, daddr, sport, dport, seq, ack, 0xffffU, NULL, 0, outgoing_direction);
 	if (retval != 0) {
 		return retval;
 	}
@@ -81,7 +81,7 @@ errno_t kn_inject_after_synack (mbuf_t incm_data)
 	seq = tcph->th_ack;
 	ack = tcph->th_seq;
 	
-	retval = kn_inject_tcp_from_params(TH_ACK, saddr, daddr, sport, dport, seq, ack, NULL, 0, outgoing_direction);
+	retval = kn_inject_tcp_from_params(TH_ACK, saddr, daddr, sport, dport, seq, ack, 0xffffU, NULL, 0, outgoing_direction);
 	if (retval != 0) {
 		return retval;
 	}
@@ -104,7 +104,7 @@ errno_t kn_inject_after_synack (mbuf_t incm_data)
 	seq = htonl(ntohl(tcph->th_ack) + 0);
 	ack = htonl(ntohl(tcph->th_seq) + 0);
 	
-	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, NULL, 0, outgoing_direction);
+	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, 0xffffU, NULL, 0, outgoing_direction);
 	if (retval != 0) {
 		return retval;
 	}
@@ -122,17 +122,17 @@ errno_t kn_inject_after_synack (mbuf_t incm_data)
 	seq = htonl(ntohl(tcph->th_ack) + 2);
 	ack = htonl(ntohl(tcph->th_seq) + 2);
 	
-	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, NULL, 0, outgoing_direction);
+	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, 0xffffU, NULL, 0, outgoing_direction);
 	if (retval != 0) {
 		return retval;
 	}
 
-    retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, NULL, 0, outgoing_direction);
+	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, 0xffffU, NULL, 0, outgoing_direction);
 	if (retval != 0) {
 		return retval;
 	}
 
-    retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, NULL, 0, outgoing_direction);
+	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, 0xffffU, NULL, 0, outgoing_direction);
 	if (retval != 0) {
 		return retval;
 	}
@@ -140,7 +140,7 @@ errno_t kn_inject_after_synack (mbuf_t incm_data)
 	return KERN_SUCCESS;
 }
 
-errno_t kn_inject_after_http (mbuf_t otgn_data)
+errno_t kn_delayed_reinject (mbuf_t otgn_data)
 {
 	errno_t retval = 0;
     mbuf_t otgn_data_dup;
@@ -216,7 +216,7 @@ void kn_fulfill_ip_ranges()
 
 
 
-errno_t kn_tcp_pkt_from_params(mbuf_t *data, u_int8_t tcph_flags, u_int32_t iph_saddr, u_int32_t iph_daddr, u_int16_t tcph_sport, u_int16_t tcph_dport, u_int32_t tcph_seq, u_int32_t tcph_ack, const char* payload, size_t payload_len) 
+errno_t kn_tcp_pkt_from_params(mbuf_t *data, u_int8_t tcph_flags, u_int32_t iph_saddr, u_int32_t iph_daddr, u_int16_t tcph_sport, u_int16_t tcph_dport, u_int32_t tcph_seq, u_int32_t tcph_ack, u_int16_t tcph_win, const char* payload, size_t payload_len) 
 {
     int retval = 0;
 	size_t tot_data_len, tot_buf_len, max_len; // mac osx thing.. to be safe, leave out 14 bytes for ethernet header. 
@@ -294,7 +294,7 @@ errno_t kn_tcp_pkt_from_params(mbuf_t *data, u_int8_t tcph_flags, u_int32_t iph_
 	o_tcph->th_seq			=	tcph_seq;
 	o_tcph->th_ack			=	tcph_ack;
 	o_tcph->th_flags		=	tcph_flags;
-	o_tcph->th_win			=	0xffffU;
+	o_tcph->th_win			=	tcph_win;
 	o_tcph->th_off			=	sizeof(struct tcphdr) / 4;
 	o_tcph->th_sum			=	0;
 	o_tcph->th_urp			=	0;
@@ -328,12 +328,12 @@ FAILURE:
     
 }
 
-errno_t kn_inject_tcp_from_params(u_int8_t tcph_flags, u_int32_t iph_saddr, u_int32_t iph_daddr, u_int16_t tcph_sport, u_int16_t tcph_dport, u_int32_t tcph_seq, u_int32_t tcph_ack, const char* payload, size_t payload_len, packet_direction direction)
+errno_t kn_inject_tcp_from_params(u_int8_t tcph_flags, u_int32_t iph_saddr, u_int32_t iph_daddr, u_int16_t tcph_sport, u_int16_t tcph_dport, u_int32_t tcph_seq, u_int32_t tcph_ack, u_int16_t tcph_win, const char* payload, size_t payload_len, packet_direction direction)
 {
 	mbuf_t pkt; 
     errno_t retval = 0;
     
-    retval = kn_tcp_pkt_from_params(&pkt, tcph_flags, iph_saddr, iph_daddr, tcph_sport, tcph_dport, tcph_seq, tcph_ack, payload, payload_len);
+    retval = kn_tcp_pkt_from_params(&pkt, tcph_flags, iph_saddr, iph_daddr, tcph_sport, tcph_dport, tcph_seq, tcph_ack, tcph_win, payload, payload_len);
     if (retval != 0) {
         kn_debug("kn_tcp_pkt_from_params returned error %d\n", retval);
         return retval;
