@@ -819,14 +819,6 @@ kern_return_t com_ccp0101_kext_kernet_start (kmod_info_t * ki, void * d) {
 	// it would indicate that the memory was pageable.
 	if (gOSMallocTag == NULL)
         goto WTF;	
-	
-    if (kn_alloc_locks() != 0) {
-        goto WTF;
-    }
-    
-    if (kn_alloc_queues() != 0) {
-        goto WTF;
-    }
     
     kn_mr_initialize();
     
@@ -836,6 +828,12 @@ kern_return_t com_ccp0101_kext_kernet_start (kmod_info_t * ki, void * d) {
 		kn_debug("kn_alloc_locks returned error %d\n", retval);
 		goto WTF;
 	}
+    
+    retval = kn_alloc_queues();
+    if (retval != 0) {
+        kn_debug("kn_alloc_queues returned error %d\n", retval);
+        goto WTF;
+    }
     
 	retval = mbuf_tag_id_find(KERNET_BUNDLEID , &gidtag);
 	if (retval != 0)
