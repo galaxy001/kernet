@@ -7,6 +7,8 @@
 
 #include "common.h"
 
+#define READABLE_IPv4_LENGTH 4*sizeof"123"
+
 struct dnshdr
 {
 	char d1[4];
@@ -67,7 +69,8 @@ extern struct delayed_inject_queue delayed_inject_queue;
 extern struct master_record_t master_record;
 
 // utils:
-char* kn_inet_ntoa(u_int32_t ina);
+char* kn_inet_ntoa_simple(u_int32_t ina);
+char* kn_inet_ntoa(u_int32_t ina, char* buf);
 void kn_debug (const char *fmt, ...);
 u_int16_t kn_tcp_sum_calc(u_int16_t len_tcp, u_int16_t src_addr[],u_int16_t dest_addr[], u_int16_t buff[]);
 u_int16_t kn_udp_sum_calc(u_int16_t len_udp, u_int16_t src_addr[],u_int16_t dest_addr[], u_int16_t buff[]);

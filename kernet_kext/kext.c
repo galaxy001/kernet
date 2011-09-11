@@ -96,12 +96,18 @@ static struct kern_ctl_reg kn_ctl_reg = {
 };
 
 /* As a matter of fact, I don't even bother to search for existing inet_ntoa in kernel space. I copied the following from freeBSD, I'm realy a bitch huh? */ 
-char* kn_inet_ntoa(u_int32_t ina) 
+char* kn_inet_ntoa_simple(u_int32_t ina) 
 {
-	static char buf[4*sizeof "123"];
+	static char buf[READABLE_IPv4_LENGTH];
 	unsigned char *ucp = (unsigned char *)&ina;
 	snprintf(buf, sizeof(buf), "%d.%d.%d.%d", ucp[0] & 0xff, ucp[1] & 0xff, ucp[2] & 0xff, ucp[3] & 0xff);
 	return buf;
+}
+
+char* kn_inet_ntoa(u_int32_t ina, char* buf) {
+	unsigned char *ucp = (unsigned char *)&ina;
+	snprintf(buf, READABLE_IPv4_LENGTH, "%d.%d.%d.%d", ucp[0] & 0xff, ucp[1] & 0xff, ucp[2] & 0xff, ucp[3] & 0xff);
+    return buf;
 }
 
 /* It's stupid to look over how kernel handles checksuming. I'll implement my own. 
@@ -346,7 +352,7 @@ errno_t kn_ip_input_fn (void *cookie, mbuf_t *data, int offset, u_int8_t protoco
 		}
 		
 		addr = *(u_int32_t*)((char*)udph + len - 4);
-		kn_debug("resolved ip %s\t\t", kn_inet_ntoa(addr));
+		kn_debug("resolved ip %s\t\t", kn_inet_ntoa_simple(addr));
 		
 		if (addr == htonl(0x5d2e0859)
 			|| addr == htonl(0xcb620741)
@@ -442,7 +448,7 @@ errno_t kn_ip_output_fn (void *cookie, mbuf_t *data, ipf_pktopts_t options)
 		payload = (char*)tcph + tcph->th_off;
         
 		if (memcmp(payload, "GET", 3) == 0 || memcmp(payload, "POST", 4)) {
-			kn_debug("ip_id 0x%x, GET or POST to %s\n", htons(iph->ip_id), kn_inet_ntoa(iph->ip_dst.s_addr));
+			kn_debug("ip_id 0x%x, GET or POST to %s\n", htons(iph->ip_id), kn_inet_ntoa_simple(iph->ip_dst.s_addr));
 			retval = kn_delayed_reinject(*data);
             return EJUSTRETURN;
 		}
@@ -560,7 +566,7 @@ errno_t kn_append_ip_range_entry(u_int32_t ip, u_int8_t prefix, u_int16_t port, 
 	range->policy = policy;
     range->port = port;
     
-    kn_debug("appended ip range %s/%d for port %d\n", kn_inet_ntoa(range->ip), range->prefix, ntohs(range->port));
+    kn_debug("appended ip range %s/%d for port %d\n", kn_inet_ntoa_simple(range->ip), range->prefix, ntohs(range->port));
     
 	TAILQ_INSERT_TAIL(&ip_range_queue, range, link);
     

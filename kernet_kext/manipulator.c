@@ -332,6 +332,8 @@ errno_t kn_inject_tcp_from_params(u_int8_t tcph_flags, u_int32_t iph_saddr, u_in
 {
 	mbuf_t pkt; 
     errno_t retval = 0;
+    char saddr[READABLE_IPv4_LENGTH];
+    char daddr[READABLE_IPv4_LENGTH];
     
     retval = kn_tcp_pkt_from_params(&pkt, tcph_flags, iph_saddr, iph_daddr, tcph_sport, tcph_dport, tcph_seq, tcph_ack, tcph_win, payload, payload_len);
     if (retval != 0) {
@@ -362,7 +364,7 @@ errno_t kn_inject_tcp_from_params(u_int8_t tcph_flags, u_int32_t iph_saddr, u_in
         return retval;
     }
 	else {
-		kn_debug("injected tcp packet, flags: 0x%X, src: %s:%d, dst: %s:%d, ack: %u, seq: %u\n", tcph_flags, kn_inet_ntoa(iph_saddr), ntohs(tcph_sport), kn_inet_ntoa(iph_daddr), ntohs(tcph_dport), tcph_ack, tcph_seq);
+		kn_debug("injected tcp packet, flags: 0x%X, src: %s:%d, dst: %s:%d, ack: %u, seq: %u\n", tcph_flags, kn_inet_ntoa(iph_saddr, saddr), ntohs(tcph_sport), kn_inet_ntoa(iph_daddr, daddr), ntohs(tcph_dport), tcph_ack, tcph_seq);
 	}	
     
     return 0;
