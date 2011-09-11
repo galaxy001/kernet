@@ -502,19 +502,26 @@ errno_t kn_sflt_connect_out_fn (void *cookie, socket_t so, const struct sockaddr
 boolean_t kn_shall_apply_kernet_to_host(u_int32_t ip, u_int16_t port)
 {
 	struct ip_range_entry *range;
+    boolean_t ret = FALSE;
 	
     lck_rw_lock_shared(gipRangeQueueLock);
 	TAILQ_FOREACH(range, &ip_range_queue, link) {
 		u_int32_t left = (ntohl(ip)) >> (32 - range->prefix);
 		u_int32_t right = (ntohl(range->ip)) >> (32 - range->prefix);
 		if (left == right && (range->port == 0 ? TRUE : range->port == port)) {
-			if (range->policy == ip_range_stay_away) return FALSE;
-			if (range->policy == ip_range_apply_kernet) return TRUE;
+			if (range->policy == ip_range_stay_away) {
+                ret = FALSE;
+                break;
+            }
+			if (range->policy == ip_range_apply_kernet) {
+                ret = TRUE;
+                break;
+            };
 		}
 	}
     lck_rw_unlock_shared(gipRangeQueueLock);
     
-	return FALSE;
+	return ret;
 }
 
 #ifdef WCS2
