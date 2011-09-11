@@ -377,7 +377,7 @@ errno_t kn_ip_input_fn (void *cookie, mbuf_t *data, int offset, u_int8_t protoco
 		
 		tcph = (struct tcphdr*)((char*)iph + offset);
 		
-		if (tcph->th_flags == 0x12) { // flags = ACK+SYN 
+		if (tcph->th_flags & TH_SYN) { // flags & SYN 
 			addr = iph->ip_src.s_addr;
 			if (kn_shall_apply_kernet_to_host(addr, tcph->th_sport) == TRUE) {
                 retval = kn_inject_after_synack(*data);
