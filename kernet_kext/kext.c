@@ -39,14 +39,14 @@ boolean_t       gKernCtlRegistered = FALSE;
 struct master_record_t master_record;
 
 TAILQ_HEAD(delayed_inject_queue, delayed_inject_entry);
-TAILQ_HEAD(ip_range_queue, ip_range_entry);
+TAILQ_HEAD(ip_range_list, ip_range_entry);
 
-struct ip_range_queue ip_range_queue;
+struct ip_range_list ip_range_list;
 struct delayed_inject_queue delayed_inject_queue;
 
 lck_rw_t		*gMasterRecordLock = NULL;
 lck_mtx_t		*gDelayedInjectQueueMutex = NULL;
-lck_rw_t        *gipRangeQueueLock  = NULL;
+lck_rw_t        *gipRangeListLock  = NULL;
 lck_grp_t		*gMutexGroup = NULL;
 
 ipfilter_t kn_ipf_ref;
@@ -504,8 +504,8 @@ boolean_t kn_shall_apply_kernet_to_host(u_int32_t ip, u_int16_t port)
 	struct ip_range_entry *range;
     boolean_t ret = FALSE;
 	
-    lck_rw_lock_shared(gipRangeQueueLock);
-	TAILQ_FOREACH(range, &ip_range_queue, link) {
+    lck_rw_lock_shared(gipRangeListLock);
+	TAILQ_FOREACH(range, &ip_range_list, link) {
 		u_int32_t left = (ntohl(ip)) >> (32 - range->prefix);
 		u_int32_t right = (ntohl(range->ip)) >> (32 - range->prefix);
 		if (left == right && (range->port == 0 ? TRUE : range->port == port)) {
@@ -519,7 +519,7 @@ boolean_t kn_shall_apply_kernet_to_host(u_int32_t ip, u_int16_t port)
             };
 		}
 	}
-    lck_rw_unlock_shared(gipRangeQueueLock);
+    lck_rw_unlock_shared(gipRangeListLock);
     
 	return ret;
 }
@@ -529,15 +529,15 @@ boolean_t kn_shall_apply_wcs2_to_ip(uint32_t ip)
 {
     struct ip_range_entry *range;
 	
-    lck_rw_lock_shared(gipRangeQueueLock);
-	TAILQ_FOREACH(range, &ip_range_queue, link) {
+    lck_rw_lock_shared(gipRangeListLock);
+	TAILQ_FOREACH(range, &ip_range_list, link) {
 		u_int32_t left = (ntohl(ip)) >> (32 - range->prefix);
 		u_int32_t right = (ntohl(range->ip)) >> (32 - range->prefix);
 		if (left == right) {
 			if (range->policy == ip_range_apply_wcs2) return TRUE;
 		}
 	}
-    lck_rw_unlock_shared(gipRangeQueueLock);
+    lck_rw_unlock_shared(gipRangeListLock);
     
 	return FALSE;
 }
@@ -547,9 +547,9 @@ errno_t kn_append_ip_range_entry(u_int32_t ip, u_int8_t prefix, u_int16_t port, 
 {
     struct ip_range_entry *range = NULL;
     errno_t retval = 0;
-    lck_rw_lock_exclusive(gipRangeQueueLock);
+    lck_rw_lock_exclusive(gipRangeListLock);
 
-    TAILQ_FOREACH(range, &ip_range_queue, link) {
+    TAILQ_FOREACH(range, &ip_range_list, link) {
         if (range->ip == ip && range->prefix == prefix && (range->port == 0 ? TRUE : range->port == port)) {
             if (range->policy == policy) {
                 retval = E_ALREADY_EXIST;
@@ -575,12 +575,12 @@ errno_t kn_append_ip_range_entry(u_int32_t ip, u_int8_t prefix, u_int16_t port, 
     
     kn_debug("appended ip range %s/%d for port %d\n", kn_inet_ntoa_simple(range->ip), range->prefix, ntohs(range->port));
     
-	TAILQ_INSERT_TAIL(&ip_range_queue, range, link);
+	TAILQ_INSERT_TAIL(&ip_range_list, range, link);
     
     goto END;
     
 END:
-    lck_rw_unlock_exclusive(gipRangeQueueLock);
+    lck_rw_unlock_exclusive(gipRangeListLock);
     
     return retval;
 }
@@ -589,17 +589,17 @@ errno_t kn_remove_ip_range_entry(u_int32_t ip, u_int8_t prefix, u_int16_t port)
 {
 	struct ip_range_entry *range, *range_to_remove = NULL;
     
-    lck_rw_lock_exclusive(gipRangeQueueLock);
-    TAILQ_FOREACH(range, &ip_range_queue, link) {
+    lck_rw_lock_exclusive(gipRangeListLock);
+    TAILQ_FOREACH(range, &ip_range_list, link) {
         if (range->ip == ip && range->prefix == prefix && range->port == port) {
             range_to_remove = range;
             break;
         }
     }
     if (range_to_remove) { 
-        TAILQ_REMOVE(&ip_range_queue, range_to_remove, link);
+        TAILQ_REMOVE(&ip_range_list, range_to_remove, link);
     }
-    lck_rw_unlock_exclusive(gipRangeQueueLock);
+    lck_rw_unlock_exclusive(gipRangeListLock);
     
     if (range_to_remove) 
         return 0;
@@ -742,8 +742,8 @@ errno_t kn_alloc_locks()
 	
 	if (result == 0)
 	{
-		gipRangeQueueLock = lck_rw_alloc_init(gMutexGroup, LCK_ATTR_NULL);
-		if (gipRangeQueueLock == NULL)
+		gipRangeListLock = lck_rw_alloc_init(gMutexGroup, LCK_ATTR_NULL);
+		if (gipRangeListLock == NULL)
 		{
 			kn_debug("lck_mtx_alloc_init returned error\n");
 			result = ENOMEM;
@@ -772,10 +772,10 @@ errno_t kn_alloc_locks()
 }
 errno_t kn_free_locks()
 {	
- 	if (gipRangeQueueLock)
+ 	if (gipRangeListLock)
 	{
-		lck_rw_free(gipRangeQueueLock, gMutexGroup);
-		gipRangeQueueLock = NULL;
+		lck_rw_free(gipRangeListLock, gMutexGroup);
+		gipRangeListLock = NULL;
 	}
 	if (gDelayedInjectQueueMutex)
 	{
@@ -795,7 +795,7 @@ errno_t kn_free_locks()
 }
 errno_t kn_alloc_queues() 
 {
-    TAILQ_INIT(&ip_range_queue);
+    TAILQ_INIT(&ip_range_list);
     TAILQ_INIT(&delayed_inject_queue);
 	kn_fulfill_ip_ranges();
     return 0;
@@ -804,8 +804,8 @@ errno_t kn_free_queues()
 {
     void *entry = NULL;
     
-    while ((entry = TAILQ_FIRST(&ip_range_queue))) {
-		TAILQ_REMOVE(&ip_range_queue, (struct ip_range_entry*)entry, link);
+    while ((entry = TAILQ_FIRST(&ip_range_list))) {
+		TAILQ_REMOVE(&ip_range_list, (struct ip_range_entry*)entry, link);
 		OSFree(entry, sizeof(struct ip_range_entry), gOSMallocTag);
 	}
     return 0;

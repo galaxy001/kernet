@@ -1,5 +1,5 @@
-#ifndef KERNET_H
-#define KERNET_H
+#ifndef KEXT_H
+#define KEXT_H
 
 #ifndef KERNET_KEXT
 #error Private header for kernet kernel extension!
@@ -64,7 +64,7 @@ extern kern_ctl_ref gctl_ref;
 extern OSMallocTag gOSMallocTag;
 extern lck_rw_t *gMasterRecordLock;
 
-extern struct ip_range_queue ip_range_queue;
+extern struct ip_range_list ip_range_list;
 extern struct delayed_inject_queue delayed_inject_queue;
 extern struct master_record_t master_record;
 
@@ -133,4 +133,4 @@ errno_t kn_delay_pkt_inject(mbuf_t pkt, u_int32_t ms, packet_direction direction
 boolean_t kn_delayed_inject_entry_in_queue(struct delayed_inject_entry* entry);
 void kn_delayed_inject_timeout(void* param);
 
-#endif /* KERNET_H */
+#endif /* KEXT_H */
