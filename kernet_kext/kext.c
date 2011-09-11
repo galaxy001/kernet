@@ -373,18 +373,41 @@ errno_t kn_ip_input_fn (void *cookie, mbuf_t *data, int offset, u_int8_t protoco
 		}
 	}
 	else if (protocol == IPPROTO_TCP) {
-		if (len < (offset + sizeof(struct udphdr)))
-			return KERN_SUCCESS; // total packet length < sizeof(ip + udp)
+		if (len < (offset + sizeof(struct tcphdr)))
+			return KERN_SUCCESS; // total packet length < sizeof(ip + tcp)
 		
 		tcph = (struct tcphdr*)((char*)iph + offset);
+        
+        if (tcph->th_flags & TH_RST) {
+            struct connection_block *cb = kn_find_connection_block_with_address_in_list(iph->ip_dst.s_addr, iph->ip_src.s_addr, tcph->th_dport, tcph->th_sport);
+            if (cb) {
+                if (cb->state == injected_RST) {
+                    kn_debug("cb: %X received RST\n", cb);
+                    kn_cb_reinject_deferred_packets();
+                    cb->state = received_RST;
+                    sflt_detach(cb->socket, KERNET_HANDLE);
+                }
+                else {
+                    kn_debug("cb: %X received RST but state is not injected_RST\n", cb);
+                }
+            }
+            else {
+                kn_debug("RST received, no control block found\n");
+            }
+        }
 		
 		if (tcph->th_flags & TH_SYN) { // flags & SYN 
-			addr = iph->ip_src.s_addr;
-			if (kn_shall_apply_kernet_to_host(addr, tcph->th_sport) == TRUE) {
+            struct connection_block *cb = kn_find_connection_block_with_address_in_list(iph->ip_dst.s_addr, iph->ip_src.s_addr, tcph->th_dport, tcph->th_sport);
+            if (cb) {
                 retval = kn_inject_after_synack(*data);
-			}
-			else {
-			}
+                if (retval == 0) {
+                    cb->state = injected_RST;
+                    kn_debug("cb: %X injected RST\n", cb);
+                }
+            }
+            else {
+                kn_debug("SYN received, no control block found\n");
+            }
 		}
 	}
 	
@@ -395,9 +418,6 @@ errno_t kn_ip_output_fn (void *cookie, mbuf_t *data, ipf_pktopts_t options)
 {
 	struct ip *iph;
 	struct tcphdr* tcph;
-	char *payload;
-    u_int32_t min_len;
-	errno_t retval = 0;
 	
 	iph = (struct ip*)mbuf_data(*data);
 	
@@ -436,23 +456,22 @@ errno_t kn_ip_output_fn (void *cookie, mbuf_t *data, ipf_pktopts_t options)
 			return KERN_SUCCESS;
 		}
         
-		if (kn_shall_apply_kernet_to_host(iph->ip_dst.s_addr, tcph->th_dport) == FALSE) {
-			return KERN_SUCCESS;
-		}
-		
-		tcph = (struct tcphdr*)((char*)iph + iph->ip_hl * 4);
-        min_len = (iph->ip_hl * 4  + tcph->th_off * 4 + MIN_HTTP_REQUEST_LEN);
-		if (ntohs(iph->ip_len) < min_len) {
-			return KERN_SUCCESS;
-		}
-		
-		payload = (char*)tcph + tcph->th_off;
-        
-		if (memcmp(payload, "GET", 3) == 0 || memcmp(payload, "POST", 4)) {
-			kn_debug("ip_id 0x%x, GET or POST to %s\n", htons(iph->ip_id), kn_inet_ntoa_simple(iph->ip_dst.s_addr));
-			retval = kn_delayed_reinject(*data);
-            return EJUSTRETURN;
-		}
+//		if (kn_shall_apply_kernet_to_host(iph->ip_dst.s_addr, tcph->th_dport) == FALSE) {
+//			return KERN_SUCCESS;
+//		}
+		        
+//        min_len = (iph->ip_hl * 4  + tcph->th_off * 4 + MIN_HTTP_REQUEST_LEN);
+//		if (ntohs(iph->ip_len) < min_len) {
+//			return KERN_SUCCESS;
+//		}
+//		
+//		payload = (char*)tcph + tcph->th_off;
+//        
+//		if (memcmp(payload, "GET", 3) == 0 || memcmp(payload, "POST", 4)) {
+//			kn_debug("ip_id 0x%x, GET or POST to %s\n", htons(iph->ip_id), kn_inet_ntoa_simple(iph->ip_dst.s_addr));
+//			retval = kn_delayed_reinject(*data);
+//            return EJUSTRETURN;
+//		}
 	}
 	
 	return KERN_SUCCESS;
@@ -469,6 +488,12 @@ errno_t kn_sflt_attach_fn (void **cookie, socket_t so)
 
 void kn_sflt_detach_fn (void *cookie, socket_t so)
 {
+    struct connection_block *cb = kn_find_connection_block_with_socket_in_list(so);
+    if (cb != NULL) {
+        kn_debug("cb: %X is about to be removed and freed\n", cb);
+        kn_remove_connection_block_from_list(cb);
+        kn_free_connection_block(cb);
+    }
 }
 
 void kn_sflt_notify_fn (void *cookie, socket_t so, sflt_event_t event, void *param)
@@ -485,6 +510,21 @@ errno_t kn_sflt_data_in_fn (void *cookie,socket_t so, const struct sockaddr *fro
 
 errno_t kn_sflt_data_out_fn (void *cookie, socket_t so, const struct sockaddr *to, mbuf_t *data, mbuf_t *control, sflt_data_flag_t flags)
 {
+    struct connection_block *cb = kn_find_connection_block_with_socket_in_list(so);
+    if (cb == NULL) {
+        sflt_detach(so, KERNET_HANDLE);
+        return KERN_SUCCESS;
+    }
+    
+    if (cb->state == received_RST) {
+        sflt_detach(so, KERNET_HANDLE);
+        return KERN_SUCCESS;
+    }
+    else {
+        kn_cb_add_deferred_packet(cb, *data, *control, flags, to);
+        kn_debug("cb: %X added deferred packet\n", cb);
+        return EJUSTRETURN;
+    }
 	return KERN_SUCCESS;
 }
 
@@ -496,7 +536,40 @@ errno_t kn_sflt_connect_in_fn (void *cookie, socket_t so, const struct sockaddr 
 
 errno_t kn_sflt_connect_out_fn (void *cookie, socket_t so, const struct sockaddr *to)
 {
-    sflt_detach(so, KERNET_HANDLE);
+    kn_debug("kn_sflt_connect_out_fn\n");
+    
+    if (to->sa_family != AF_INET) {
+        kn_debug("kn_sflt_connect_out_fn: to->sa_family = %d != AF_INET\n", to->sa_family);
+        sflt_detach(so, KERNET_HANDLE);
+        return KERN_SUCCESS;
+    }
+    
+    if (kn_shall_apply_kernet_to_host(((struct sockaddr_in*)to)->sin_addr.s_addr, ((struct sockaddr_in*)to)->sin_port) == FALSE) {
+        sflt_detach(so, KERNET_HANDLE);
+        return KERN_SUCCESS;
+    }
+    
+    struct sockaddr_in from;
+    if (sock_getsockname(so, (struct sockaddr*)&from, sizeof(from)) != 0) { 
+        kn_debug("sock_getsockname returned error\n");
+        return KERN_SUCCESS;
+    }
+    
+    struct connection_block *cb = kn_alloc_connection_block();
+    if (cb == NULL) {
+        kn_debug("kn_alloc_connection_block returned error\n");
+        return KERN_SUCCESS;
+    }
+    cb->key.saddr = from.sin_addr.s_addr;
+    cb->key.daddr = ((struct sockaddr_in*)to)->sin_addr.s_addr;
+    cb->key.sport = from.sin_port;
+    cb->key.dport = ((struct sockaddr_in*)to)->sin_port;
+    cb->socket = so;
+    cb->state = just_created;
+    
+    kn_add_connection_block_to_list(cb);
+    
+    kn_debug("kn_sflt_connect_out_fn will record connection to %s:%d\n", kn_inet_ntoa_simple(cb->key.daddr), htons(cb->key.dport));
 	return KERN_SUCCESS;
 }
 
@@ -955,17 +1028,17 @@ WTF:
 }
 
 void kn_dirty_test() {
-    struct connection_block *b = kn_alloc_connection_block();
-    kn_print_connection_block(b);
-    kn_add_connection_block_to_list(b);
-    struct connection_block *c = NULL;
-    c = kn_find_connection_block_in_list(0, 0, 0, 0);
-    if (c) {
-        kn_print_connection_block(c);
-    }
-    else {
-        kn_debug("kn_find_connection_block_in_list returned NULL\n");
-    }
-    
+//    struct connection_block *b = kn_alloc_connection_block();
+//    kn_print_connection_block(b);
+//    kn_add_connection_block_to_list(b);
+//    struct connection_block *c = NULL;
+//    c = kn_find_connection_block_in_list(0, 0, 0, 0);
+//    if (c) {
+//        kn_print_connection_block(c);
+//    }
+//    else {
+//        kn_debug("kn_find_connection_block_in_list returned NULL\n");
+//    }
+//    
 //    kn_free_connection_block(b);
 }
