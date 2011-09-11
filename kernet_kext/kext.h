@@ -63,6 +63,7 @@ extern mbuf_tag_id_t gidtag;
 extern kern_ctl_ref gctl_ref;
 extern OSMallocTag gOSMallocTag;
 extern lck_rw_t *gMasterRecordLock;
+extern lck_grp_t *gMutexGroup;
 
 extern struct ip_range_list ip_range_list;
 extern struct delayed_inject_queue delayed_inject_queue;
@@ -77,6 +78,7 @@ u_int16_t kn_udp_sum_calc(u_int16_t len_udp, u_int16_t src_addr[],u_int16_t dest
 boolean_t kn_mbuf_check_tag(mbuf_t *m, mbuf_tag_id_t module_id, mbuf_tag_type_t tag_type, packet_direction value);
 errno_t	kn_mbuf_set_tag(mbuf_t *data, mbuf_tag_id_t id_tag, mbuf_tag_type_t tag_type, packet_direction value);
 errno_t kn_prepend_mbuf_hdr(mbuf_t *data, size_t pkt_len);
+void kn_dirty_test();
 
 // master record operations:
 void kn_mr_initialize();

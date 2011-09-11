@@ -15,6 +15,8 @@
 		741248B3130E036B00715730 /* manipulator.c in Sources */ = {isa = PBXBuildFile; fileRef = 741248AB130E036B00715730 /* manipulator.c */; };
 		741248CD130E03EB00715730 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 741248CC130E03EB00715730 /* main.c */; };
 		741248D3130E058500715730 /* common.h in Headers */ = {isa = PBXBuildFile; fileRef = 741248A2130E036B00715730 /* common.h */; };
+		7EBA1AD9141C82DE000C94A1 /* connection.c in Sources */ = {isa = PBXBuildFile; fileRef = 7EBA1AD7141C82DE000C94A1 /* connection.c */; };
+		7EBA1ADA141C82DE000C94A1 /* connection.h in Headers */ = {isa = PBXBuildFile; fileRef = 7EBA1AD8141C82DE000C94A1 /* connection.h */; };
 		7EF3551013FE90530049B88C /* ios_supporting.c in Sources */ = {isa = PBXBuildFile; fileRef = 7EF3550F13FE90530049B88C /* ios_supporting.c */; };
 /* End PBXBuildFile section */
 
@@ -37,11 +39,13 @@
 		741248A3130E036B00715730 /* control.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = control.c; path = kernet_kext/control.c; sourceTree = SOURCE_ROOT; };
 		741248A7130E036B00715730 /* kernet-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = "kernet-Info.plist"; path = "kernet_kext/kernet-Info.plist"; sourceTree = SOURCE_ROOT; };
 		741248A8130E036B00715730 /* kernet-Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "kernet-Prefix.pch"; path = "kernet_kext/kernet-Prefix.pch"; sourceTree = SOURCE_ROOT; };
-		741248A9130E036B00715730 /* kext.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = kext.c; path = kernet_kext/kext.c; sourceTree = SOURCE_ROOT; };
+		741248A9130E036B00715730 /* kext.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; lineEnding = 0; name = kext.c; path = kernet_kext/kext.c; sourceTree = SOURCE_ROOT; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		741248AA130E036B00715730 /* kext.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = kext.h; path = kernet_kext/kext.h; sourceTree = SOURCE_ROOT; };
 		741248AB130E036B00715730 /* manipulator.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = manipulator.c; path = kernet_kext/manipulator.c; sourceTree = SOURCE_ROOT; };
 		741248CC130E03EB00715730 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
 		7EAC855513FE6E14005C6EE9 /* kernet_cli */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = kernet_cli; sourceTree = BUILT_PRODUCTS_DIR; };
+		7EBA1AD7141C82DE000C94A1 /* connection.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = connection.c; path = kernet_kext/connection.c; sourceTree = SOURCE_ROOT; };
+		7EBA1AD8141C82DE000C94A1 /* connection.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = connection.h; path = kernet_kext/connection.h; sourceTree = SOURCE_ROOT; };
 		7EEF495F1371222E006845E2 /* not-working.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "not-working.c"; path = "kernet_kext/not-working.c"; sourceTree = SOURCE_ROOT; };
 		7EEF496A137128E7006845E2 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
 		7EEF496B137128E7006845E2 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = System/Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
@@ -98,6 +102,8 @@
 		74124895130E033600715730 /* kernet_kext */ = {
 			isa = PBXGroup;
 			children = (
+				7EBA1AD7141C82DE000C94A1 /* connection.c */,
+				7EBA1AD8141C82DE000C94A1 /* connection.h */,
 				741248B4130E037B00715730 /* Supporting files */,
 				741248A2130E036B00715730 /* common.h */,
 				741248A3130E036B00715730 /* control.c */,
@@ -148,6 +154,7 @@
 				741248AC130E036B00715730 /* common.h in Headers */,
 				741248B0130E036B00715730 /* kernet-Prefix.pch in Headers */,
 				741248B2130E036B00715730 /* kext.h in Headers */,
+				7EBA1ADA141C82DE000C94A1 /* connection.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -254,6 +261,7 @@
 				741248B1130E036B00715730 /* kext.c in Sources */,
 				741248B3130E036B00715730 /* manipulator.c in Sources */,
 				7EF3551013FE90530049B88C /* ios_supporting.c in Sources */,
+				7EBA1AD9141C82DE000C94A1 /* connection.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -273,7 +281,7 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
-				CODE_SIGN_IDENTITY = "iPhone Developer: Zhongmin Chen (ER68WHNSKW)";
+				CODE_SIGN_IDENTITY = "";
 				COPY_PHASE_STRIP = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
@@ -282,13 +290,13 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = NO;
 				GCC_PREFIX_HEADER = "kernet_kext/kernet-Prefix.pch";
 				GCC_PREPROCESSOR_DEFINITIONS = DEBUG;
-				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_VERSION = "";
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				INFOPLIST_FILE = "kernet_kext/kernet-Info.plist";
 				INSTALL_PATH = "$(SYSTEM_LIBRARY_DIR)/Extensions";
-				MACOSX_DEPLOYMENT_TARGET = 10.6;
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				MODULE_NAME = com.ccp0101.kext.kernet;
 				MODULE_START = com_ccp0101_kext_kernet_start;
 				MODULE_STOP = com_ccp0101_kext_kernet_stop;
@@ -296,7 +304,6 @@
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_CFLAGS = "-DKERNET_KEXT";
 				PRODUCT_NAME = kernet;
-				PROVISIONING_PROFILE = "";
 				SDKROOT = macosx;
 				WRAPPER_EXTENSION = kext;
 			};
@@ -307,27 +314,26 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
-				CODE_SIGN_IDENTITY = "iPhone Developer: Zhongmin Chen (ER68WHNSKW)";
+				CODE_SIGN_IDENTITY = "";
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = NO;
 				GCC_PREFIX_HEADER = "kernet_kext/kernet-Prefix.pch";
-				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_VERSION = "";
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				INFOPLIST_FILE = "kernet_kext/kernet-Info.plist";
 				INSTALL_PATH = "$(SYSTEM_LIBRARY_DIR)/Extensions";
-				MACOSX_DEPLOYMENT_TARGET = 10.6;
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				MODULE_NAME = com.ccp0101.kext.kernet;
 				MODULE_START = com_ccp0101_kext_kernet_start;
 				MODULE_STOP = com_ccp0101_kext_kernet_stop;
 				MODULE_VERSION = 1.0.0d1;
 				OTHER_CFLAGS = "-DKERNET_KEXT";
 				PRODUCT_NAME = kernet;
-				PROVISIONING_PROFILE = "";
 				SDKROOT = macosx;
 				WRAPPER_EXTENSION = kext;
 			};

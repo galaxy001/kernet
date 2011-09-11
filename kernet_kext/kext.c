@@ -29,6 +29,7 @@
 #include <sys/queue.h>
 
 #include "kext.h"
+#include "connection.h"
 
 OSMallocTag		gOSMallocTag;
 mbuf_tag_id_t	gidtag;
@@ -797,6 +798,7 @@ errno_t kn_alloc_queues()
 {
     TAILQ_INIT(&ip_range_list);
     TAILQ_INIT(&delayed_inject_queue);
+    kn_alloc_connection_block_list();
 	kn_fulfill_ip_ranges();
     return 0;
 }
@@ -808,6 +810,9 @@ errno_t kn_free_queues()
 		TAILQ_REMOVE(&ip_range_list, (struct ip_range_entry*)entry, link);
 		OSFree(entry, sizeof(struct ip_range_entry), gOSMallocTag);
 	}
+    
+    kn_free_connection_block_list();
+    
     return 0;
 }
 
@@ -872,6 +877,8 @@ kern_return_t com_ccp0101_kext_kernet_start (kmod_info_t * ki, void * d) {
 		kn_debug("ctl_register returned error %d\n", retval);
 		goto WTF;
 	}
+    
+    kn_dirty_test();
     
 	kn_debug("extension has been loaded.\n");
     return KERN_SUCCESS;
@@ -945,4 +952,20 @@ kern_return_t com_ccp0101_kext_kernet_stop (kmod_info_t * ki, void * d) {
 WTF:
 	kn_debug("extension failed to stop.\n");
 	return KERN_FAILURE;
+}
+
+void kn_dirty_test() {
+    struct connection_block *b = kn_alloc_connection_block();
+    kn_print_connection_block(b);
+    kn_add_connection_block_to_list(b);
+    struct connection_block *c = NULL;
+    c = kn_find_connection_block_in_list(0, 0, 0, 0);
+    if (c) {
+        kn_print_connection_block(c);
+    }
+    else {
+        kn_debug("kn_find_connection_block_in_list returned NULL\n");
+    }
+    
+//    kn_free_connection_block(b);
 }
