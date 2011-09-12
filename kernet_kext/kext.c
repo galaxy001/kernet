@@ -1028,17 +1028,4 @@ WTF:
 }
 
 void kn_dirty_test() {
-//    struct connection_block *b = kn_alloc_connection_block();
-//    kn_print_connection_block(b);
-//    kn_add_connection_block_to_list(b);
-//    struct connection_block *c = NULL;
-//    c = kn_find_connection_block_in_list(0, 0, 0, 0);
-//    if (c) {
-//        kn_print_connection_block(c);
-//    }
-//    else {
-//        kn_debug("kn_find_connection_block_in_list returned NULL\n");
-//    }
-//    
-//    kn_free_connection_block(b);
 }

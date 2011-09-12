@@ -64,8 +64,6 @@ struct connection_block* kn_find_connection_block_with_address_in_list(u_int32_t
     char s_addr[READABLE_IPv4_LENGTH];
     char d_addr[READABLE_IPv4_LENGTH];
 
-    kn_debug("looking for connection block for %s:%d <-> %s:%d\n", kn_inet_ntoa(saddr, s_addr), htons(sport), kn_inet_ntoa(daddr, d_addr), htons(dport));
-
     struct connection_block *b = NULL;
     boolean_t found = FALSE;
     TAILQ_FOREACH_REVERSE(b, &connection_block_list, connection_block_list, link) {
@@ -77,8 +75,15 @@ struct connection_block* kn_find_connection_block_with_address_in_list(u_int32_t
             break;
         }
     }
-    if (found) return b;
-    else return NULL;
+    if (found) {
+        kn_debug("found via address: ");
+        kn_print_connection_block(b);
+        return b;
+    }
+    else {
+        kn_debug("failed connection block for %s:%d <-> %s:%d\n", kn_inet_ntoa(saddr, s_addr), sport, daddr, kn_inet_ntoa(daddr, d_addr));
+        return NULL;
+    }
 }
 
 struct connection_block* kn_find_connection_block_with_socket_in_list(socket_t so)
@@ -91,8 +96,15 @@ struct connection_block* kn_find_connection_block_with_socket_in_list(socket_t s
             break;
         }
     }
-    if (found) return b;
-    else return NULL;
+    if (found) {
+        kn_debug("found via socket: ");
+        kn_print_connection_block(b);
+        return b;
+    }
+    else {
+        kn_debug("failed connection block for socket 0x%X", so);
+        return NULL;
+    }
 }
 
 void kn_move_connection_block_to_tail(struct connection_block *b)
@@ -148,7 +160,7 @@ void kn_print_connection_block(struct connection_block* b)
     char saddr[READABLE_IPv4_LENGTH];
     char daddr[READABLE_IPv4_LENGTH];
     
-    kn_debug("connection block for %s:%d <-> %s:%d\n", kn_inet_ntoa(b->key.saddr, saddr), htons(b->key.sport), kn_inet_ntoa(b->key.daddr, daddr), htons(b->key.dport));
+    kn_debug("connection block of socket 0x%X for %s:%d <-> %s:%d\n", b->socket, kn_inet_ntoa(b->key.saddr, saddr), htons(b->key.sport), kn_inet_ntoa(b->key.daddr, daddr), htons(b->key.dport));
     
     return;
 }
@@ -183,6 +195,7 @@ errno_t kn_cb_reinject_deferred_packets(struct connection_block* cb)
             ret = retval;
             kn_debug("sock_inject_data_out returned error %d\n", retval);
         }
+        OSFree(p, sizeof(struct deferred_packet), gOSMallocTag);
     }
     return ret;
 }
