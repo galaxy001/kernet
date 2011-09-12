@@ -383,7 +383,7 @@ errno_t kn_ip_input_fn (void *cookie, mbuf_t *data, int offset, u_int8_t protoco
             if (cb) {
                 if (cb->state == injected_RST) {
                     kn_debug("cb: %X received RST\n", cb);
-                    kn_cb_reinject_deferred_packets();
+                    kn_cb_reinject_deferred_packets(cb);
                     cb->state = received_RST;
                     sflt_detach(cb->socket, KERNET_HANDLE);
                 }
@@ -501,6 +501,9 @@ void kn_sflt_notify_fn (void *cookie, socket_t so, sflt_event_t event, void *par
 	if (event == sock_evt_connected) {
 		kn_debug("notified that so 0x%X has connected.\n", so);
 	}
+    else if (event == sock_evt_disconnecting || event == sock_evt_shutdown || event == sock_evt_disconnected || event == sock_evt_closing) {
+        sflt_detach(so, KERNET_HANDLE);
+    }
 }
 
 errno_t kn_sflt_data_in_fn (void *cookie,socket_t so, const struct sockaddr *from, mbuf_t *data, mbuf_t *control, sflt_data_flag_t flags)
@@ -838,6 +841,15 @@ errno_t kn_alloc_locks()
                     kn_debug("lck_mtx_alloc_init returned error\n");
                     result = ENOMEM;
                 }
+                if (result == 0)
+                {
+                    gConnectionBlockListLock = lck_mtx_alloc_init(gMutexGroup, LCK_ATTR_NULL);
+                    if (gConnectionBlockListLock == NULL)
+                    {
+                        kn_debug("lck_mtx_alloc_init returned error\n");
+                        result = ENOMEM;
+                    }
+                }
             }
 		}
 	}
@@ -860,6 +872,10 @@ errno_t kn_free_locks()
     {
         lck_rw_free(gMasterRecordLock, gMutexGroup);
         gMasterRecordLock = NULL;
+    }
+    if (gConnectionBlockListLock) {
+        lck_mtx_free(gConnectionBlockListLock, gMutexGroup);
+        gConnectionBlockListLock = NULL;
     }
     if (gMutexGroup) {
         lck_grp_free(gMutexGroup);

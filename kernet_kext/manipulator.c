@@ -64,7 +64,7 @@ errno_t kn_inject_after_synack (mbuf_t incm_data)
 	seq = htonl(ntohl(tcph->th_ack) - 1);
 	ack = tcph->th_seq;
 	
-	retval = kn_inject_tcp_from_params(TH_RST, saddr, daddr, sport, dport, seq, ack, 0xffffU, NULL, 0, outgoing_direction);
+	retval = kn_inject_tcp_from_params(TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0x1628U), NULL, 0, outgoing_direction);
 	if (retval != 0) {
 		return retval;
 	}
@@ -81,7 +81,7 @@ errno_t kn_inject_after_synack (mbuf_t incm_data)
 	seq = tcph->th_ack;
 	ack = tcph->th_seq;
 	
-	retval = kn_inject_tcp_from_params(TH_ACK, saddr, daddr, sport, dport, seq, ack, 0xffffU, NULL, 0, outgoing_direction);
+	retval = kn_inject_tcp_from_params(TH_ACK, saddr, daddr, sport, dport, seq, ack, htons(0x1628U), NULL, 0, outgoing_direction);
 	if (retval != 0) {
 		return retval;
 	}
@@ -104,7 +104,7 @@ errno_t kn_inject_after_synack (mbuf_t incm_data)
 	seq = htonl(ntohl(tcph->th_ack) + 0);
 	ack = htonl(ntohl(tcph->th_seq) + 0);
 	
-	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, 0xffffU, NULL, 0, outgoing_direction);
+	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0x1628U), NULL, 0, outgoing_direction);
 	if (retval != 0) {
 		return retval;
 	}
@@ -122,17 +122,17 @@ errno_t kn_inject_after_synack (mbuf_t incm_data)
 	seq = htonl(ntohl(tcph->th_ack) + 2);
 	ack = htonl(ntohl(tcph->th_seq) + 2);
 	
-	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, 0xffffU, NULL, 0, outgoing_direction);
+	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0x1628U), NULL, 0, outgoing_direction);
 	if (retval != 0) {
 		return retval;
 	}
 
-	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, 0xffffU, NULL, 0, outgoing_direction);
+	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0x1628U), NULL, 0, outgoing_direction);
 	if (retval != 0) {
 		return retval;
 	}
 
-	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, 0xffffU, NULL, 0, outgoing_direction);
+	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0x1628U), NULL, 0, outgoing_direction);
 	if (retval != 0) {
 		return retval;
 	}
