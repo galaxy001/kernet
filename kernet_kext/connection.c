@@ -85,6 +85,10 @@ struct connection_block* kn_find_connection_block_with_address_in_list(u_int32_t
 {
     struct connection_block *b = NULL, *tmp;
     boolean_t found = FALSE;
+    
+    if (gConnectionBlockListLock == NULL) 
+        return NULL;
+    
     lck_mtx_lock(gConnectionBlockListLock);
     TAILQ_FOREACH_REVERSE_SAFE(b, &connection_block_list, connection_block_list, link, tmp) {
         // currently source addresses don't match so ignore them for now
@@ -110,6 +114,10 @@ struct connection_block* kn_find_connection_block_with_socket_in_list(socket_t s
 {
     struct connection_block *b = NULL;
     boolean_t found = FALSE;
+    
+    if (gConnectionBlockListLock == NULL) 
+        return NULL;
+    
     lck_mtx_lock(gConnectionBlockListLock);
     TAILQ_FOREACH_REVERSE(b, &connection_block_list, connection_block_list, link) {
         if (b->socket == so) {

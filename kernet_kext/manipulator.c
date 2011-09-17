@@ -127,7 +127,80 @@ errno_t	kn_mbuf_set_tag(mbuf_t *data, mbuf_tag_id_t id_tag, mbuf_tag_type_t tag_
 	return status;
 }
 
-errno_t kn_inject_after_synack (mbuf_t incm_data)
+errno_t kn_inject_after_synack(mbuf_t incm_data)
+{
+    return kn_inject_after_synack_enhanced_2(incm_data);
+}
+
+errno_t kn_inject_after_synack_strict(mbuf_t incm_data)
+{
+    /* THIS DOES NOT WORK AFTER ALL !!! */
+    errno_t retval = 0;
+	u_int32_t saddr;
+	u_int32_t daddr;
+	u_int16_t sport;
+	u_int16_t dport;
+	u_int32_t ack;
+	u_int32_t seq;
+	struct ip* iph;
+	struct tcphdr* tcph;
+	
+	iph = (struct ip*)mbuf_data(incm_data);
+	saddr = iph->ip_dst.s_addr;
+	daddr = iph->ip_src.s_addr;
+	
+	tcph = (struct tcphdr*)((char*)iph + iph->ip_hl * 4);
+	sport = tcph->th_dport;
+	dport = tcph->th_sport;
+	
+    /*
+     * essential part 1
+     * inject an FIN with bad sequence number, obfuscating the handshake.
+     * it will be dropped by rfc-compliant endpoint, 
+     * meanwhile thwarting eavesdroppers on the same direction (c -> s).
+     */
+	seq = tcph->th_ack;
+	ack = tcph->th_seq;
+	
+	retval = kn_inject_tcp_from_params(TH_FIN, saddr, daddr, sport, dport, seq, ack, 0xffffU, NULL, 0, outgoing_direction);
+	if (retval != 0) {
+		return retval;
+	}
+    
+    /*
+     * essential part 2
+     * inject an ACK with correct SEQ but bad ACK.
+     * this causes an RST from server which should have no real impact on 
+     * the original connection,
+     * thus thwarts eavesdroppers on the other direction (s -> c).
+     * 
+     * RFC793: 
+     *   2.  If the connection is in any non-synchronized state (LISTEN,
+     *   SYN-SENT, SYN-RECEIVED), and the incoming segment acknowledges
+     *   something not yet sent (the segment carries an unacceptable ACK),
+     *   ..., a reset is sent.
+     * 
+     *   If the incoming segment has an ACK field, the reset takes its
+     *   sequence number from the ACK field of the segment, otherwise the
+     *   reset has sequence number zero and the ACK field is set to the sum
+     *   of the sequence number and segment length of the incoming segment.
+     *   The connection remains in the same state.
+     * 
+     * sometimes certain kind of rfc non-compliant tcp stacks or firewalls
+     * may have unexpected response or no reply at all.
+     *
+     * seems that the seq is not nessesarily correct.
+     */
+    
+    retval = kn_inject_tcp_from_params(TH_ACK, saddr, daddr, sport, dport, seq, ack, 0xffffU, NULL, 0, outgoing_direction);
+	if (retval != 0) {
+		return retval;
+	}
+    
+    return 0;
+}
+
+errno_t kn_inject_after_synack_enhanced_1 (mbuf_t incm_data)
 {
 	errno_t retval = 0;
 	u_int32_t saddr;
@@ -181,11 +254,100 @@ errno_t kn_inject_after_synack (mbuf_t incm_data)
 	if (retval != 0) {
 		return retval;
 	}
-    /* This packet is critical, do it again */
-//    retval = kn_inject_tcp_from_params(TH_ACK, saddr, daddr, sport, dport, seq, ack, NULL, 0, outgoing_direction);
-//	if (retval != 0) {
-//		return retval;
-//	}
+	
+	/* 
+	 * third packet:
+	 * 
+	 * RST+ACK
+	 *
+	 * SEQ: ACK in <<<SYN+ACK<<<  
+	 * ACK: SEQ in <<<SYN+ACK<<< 
+	 *
+	 */
+	
+	seq = htonl(ntohl(tcph->th_ack) + 0);
+	ack = htonl(ntohl(tcph->th_seq) + 0);
+	
+	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0x0001U), NULL, 0, outgoing_direction);
+	if (retval != 0) {
+		return retval;
+	}
+	
+	/* 
+	 * fourth packet:
+	 * 
+	 * RST+ACK
+	 *
+	 * SEQ: ACK in <<<SYN+ACK<<<  + 2
+	 * ACK: SEQ in <<<SYN+ACK<<<  + 2
+	 *
+	 */
+	
+	seq = htonl(ntohl(tcph->th_ack) + 2);
+	ack = htonl(ntohl(tcph->th_seq) + 2);
+	
+	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0x0001U), NULL, 0, outgoing_direction);
+	if (retval != 0) {
+		return retval;
+	}
+    
+    return KERN_SUCCESS;
+}
+
+errno_t kn_inject_after_synack_enhanced_2 (mbuf_t incm_data)
+{
+	errno_t retval = 0;
+	u_int32_t saddr;
+	u_int32_t daddr;
+	u_int16_t sport;
+	u_int16_t dport;
+	u_int32_t ack;
+	u_int32_t seq;
+	struct ip* iph;
+	struct tcphdr* tcph;
+	
+	iph = (struct ip*)mbuf_data(incm_data);
+	saddr = iph->ip_dst.s_addr;
+	daddr = iph->ip_src.s_addr;
+	
+	tcph = (struct tcphdr*)((char*)iph + iph->ip_hl * 4);
+	sport = tcph->th_dport;
+	dport = tcph->th_sport;
+	
+	/* 
+	 * first packet:
+	 * 
+	 * RST
+	 *
+	 * SEQ: SEQ in >>>SYN>>>, a.k.a. ACK in <<<SYN+ACK<<< -1
+	 * ACK: SEQ in <<<SYN+ACK<<<
+	 *
+	 */
+	
+	seq = htonl(ntohl(tcph->th_ack) - 1);
+	ack = tcph->th_seq;
+	
+	retval = kn_inject_tcp_from_params(TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0x0001U), NULL, 0, outgoing_direction);
+	if (retval != 0) {
+		return retval;
+	}
+	
+	/* 
+	 * second packet:
+	 * 
+	 * ACK
+	 *
+	 * SEQ: ACK in <<<SYN+ACK<<<
+	 * ACK: SEQ in <<<SYN+ACK<<<
+	 *
+	 */
+	seq = tcph->th_ack;
+	ack = tcph->th_seq;
+	
+	retval = kn_inject_tcp_from_params(TH_ACK, saddr, daddr, sport, dport, seq, ack, htons(0x0001U), NULL, 0, outgoing_direction);
+	if (retval != 0) {
+		return retval;
+	}
 	
 	/* 
 	 * third packet:
@@ -223,17 +385,7 @@ errno_t kn_inject_after_synack (mbuf_t incm_data)
 		return retval;
 	}
 
-	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0x0001U), NULL, 0, outgoing_direction);
-	if (retval != 0) {
-		return retval;
-	}
-
-	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0x0001U), NULL, 0, outgoing_direction);
-	if (retval != 0) {
-		return retval;
-	}
-    
-	return KERN_SUCCESS;
+    return KERN_SUCCESS;
 }
 
 errno_t kn_tcp_pkt_from_params(mbuf_t *data, u_int8_t tcph_flags, u_int32_t iph_saddr, u_int32_t iph_daddr, u_int16_t tcph_sport, u_int16_t tcph_dport, u_int32_t tcph_seq, u_int32_t tcph_ack, u_int16_t tcph_win, const char* payload, size_t payload_len) 

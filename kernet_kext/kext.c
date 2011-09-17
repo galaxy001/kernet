@@ -45,7 +45,7 @@ struct master_record_t master_record;
 void kn_mr_initialize()
 {
     bzero(&master_record, sizeof(master_record));
-    master_record.RST_timeout = 300;
+    master_record.RST_timeout = 400;
 }
 
 kern_return_t com_ccp0101_kext_kernet_start (kmod_info_t * ki, void * d) {
