@@ -30,6 +30,102 @@
 #include <sys/queue.h>
 
 #include "kext.h"
+#include "locks.h"
+#include "utils.h"
+#include "manipulator.h"
+
+errno_t kn_prepend_mbuf_hdr(mbuf_t *data, size_t pkt_len)
+{
+	mbuf_t			new_hdr;
+	errno_t			status;
+    
+	status = mbuf_gethdr(MBUF_WAITOK, MBUF_TYPE_DATA, &new_hdr);
+	if (KERN_SUCCESS == status)
+	{
+		/* we've created a replacement header, now we have to set things up */
+		/* set the mbuf argument as the next mbuf in the chain */
+		mbuf_setnext(new_hdr, *data);
+		
+		/* set the next packet attached to the mbuf argument in the pkt hdr */
+		mbuf_setnextpkt(new_hdr, mbuf_nextpkt(*data));
+		/* set the total chain len field in the pkt hdr */
+		mbuf_pkthdr_setlen(new_hdr, pkt_len);
+		mbuf_setlen(new_hdr, 0);
+        
+		mbuf_pkthdr_setrcvif(*data, NULL);
+		
+		/* now set the new mbuf_t as the new header mbuf_t */
+		*data = new_hdr;
+	}
+	return status;
+}
+
+boolean_t kn_mbuf_check_tag(mbuf_t *m, mbuf_tag_id_t module_id, mbuf_tag_type_t tag_type, packet_direction value)
+{
+    errno_t	status;
+	int		*tag_ref;
+	size_t	len;
+	
+	// Check whether we have seen this packet before.
+	status = mbuf_tag_find(*m, module_id, tag_type, &len, (void**)&tag_ref);
+	if ((status == 0) && (*tag_ref == value) && (len == sizeof(value)))
+		return TRUE;
+    
+	return FALSE;
+}
+
+errno_t	kn_mbuf_set_tag(mbuf_t *data, mbuf_tag_id_t id_tag, mbuf_tag_type_t tag_type, packet_direction value)
+{	
+	errno_t status;
+	int		*tag_ref = NULL;
+	size_t	len;
+	
+	// look for existing tag
+	status = mbuf_tag_find(*data, id_tag, tag_type, &len, (void*)&tag_ref);
+	// allocate tag if needed
+	if (status != 0) 
+	{		
+		status = mbuf_tag_allocate(*data, id_tag, tag_type, sizeof(value), MBUF_WAITOK, (void**)&tag_ref);
+		if (status == 0)
+			*tag_ref = value;		// set tag_ref
+		else if (status == EINVAL)
+		{			
+			mbuf_flags_t	flags;
+			// check to see if the mbuf_tag_allocate failed because the mbuf_t has the M_PKTHDR flag bit not set
+			flags = mbuf_flags(*data);
+			if ((flags & MBUF_PKTHDR) == 0)
+			{
+				mbuf_t			m = *data;
+				size_t			totalbytes = 0;
+                
+				/* the packet is missing the MBUF_PKTHDR bit. In order to use the mbuf_tag_allocate, function,
+                 we need to prepend an mbuf to the mbuf which has the MBUF_PKTHDR bit set.
+                 We cannot just set this bit in the flags field as there are assumptions about the internal
+                 fields which there are no API's to access.
+                 */
+				kn_debug("mbuf_t missing MBUF_PKTHDR bit\n");
+                
+				while (m)
+				{
+					totalbytes += mbuf_len(m);
+					m = mbuf_next(m);	// look at the next mbuf
+				}
+				status = kn_prepend_mbuf_hdr(data, totalbytes);
+				if (status == KERN_SUCCESS)
+				{
+					status = mbuf_tag_allocate(*data, id_tag, tag_type, sizeof(value), MBUF_WAITOK, (void**)&tag_ref);
+					if (status)
+					{
+						kn_debug("mbuf_tag_allocate failed a second time, status was %d\n", status);
+					}
+				}
+			}
+		}
+		else
+			kn_debug("mbuf_tag_allocate failed, status was %d\n", status);
+	}
+	return status;
+}
 
 errno_t kn_inject_after_synack (mbuf_t incm_data)
 {
@@ -64,7 +160,7 @@ errno_t kn_inject_after_synack (mbuf_t incm_data)
 	seq = htonl(ntohl(tcph->th_ack) - 1);
 	ack = tcph->th_seq;
 	
-	retval = kn_inject_tcp_from_params(TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0x1628U), NULL, 0, outgoing_direction);
+	retval = kn_inject_tcp_from_params(TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0x0001U), NULL, 0, outgoing_direction);
 	if (retval != 0) {
 		return retval;
 	}
@@ -81,7 +177,7 @@ errno_t kn_inject_after_synack (mbuf_t incm_data)
 	seq = tcph->th_ack;
 	ack = tcph->th_seq;
 	
-	retval = kn_inject_tcp_from_params(TH_ACK, saddr, daddr, sport, dport, seq, ack, htons(0x1628U), NULL, 0, outgoing_direction);
+	retval = kn_inject_tcp_from_params(TH_ACK, saddr, daddr, sport, dport, seq, ack, htons(0x0001U), NULL, 0, outgoing_direction);
 	if (retval != 0) {
 		return retval;
 	}
@@ -104,7 +200,7 @@ errno_t kn_inject_after_synack (mbuf_t incm_data)
 	seq = htonl(ntohl(tcph->th_ack) + 0);
 	ack = htonl(ntohl(tcph->th_seq) + 0);
 	
-	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0x1628U), NULL, 0, outgoing_direction);
+	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0x0001U), NULL, 0, outgoing_direction);
 	if (retval != 0) {
 		return retval;
 	}
@@ -122,99 +218,23 @@ errno_t kn_inject_after_synack (mbuf_t incm_data)
 	seq = htonl(ntohl(tcph->th_ack) + 2);
 	ack = htonl(ntohl(tcph->th_seq) + 2);
 	
-	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0x1628U), NULL, 0, outgoing_direction);
+	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0x0001U), NULL, 0, outgoing_direction);
 	if (retval != 0) {
 		return retval;
 	}
 
-	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0x1628U), NULL, 0, outgoing_direction);
+	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0x0001U), NULL, 0, outgoing_direction);
 	if (retval != 0) {
 		return retval;
 	}
 
-	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0x1628U), NULL, 0, outgoing_direction);
+	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0x0001U), NULL, 0, outgoing_direction);
 	if (retval != 0) {
 		return retval;
 	}
     
 	return KERN_SUCCESS;
 }
-
-errno_t kn_delayed_reinject (mbuf_t otgn_data)
-{
-	errno_t retval = 0;
-    mbuf_t otgn_data_dup;
-    u_int16_t ms = 0;
-    
-    lck_rw_lock_exclusive(gMasterRecordLock);
-    ms = master_record.http_delay_ms;
-    lck_rw_unlock_exclusive(gMasterRecordLock);
-    
-    retval = mbuf_dup(otgn_data, MBUF_DONTWAIT, &otgn_data_dup);
-    if (retval != 0) {
-        kn_debug("mbuf_dup returned error %d\n", retval);
-        return retval;
-    }
-    
-    retval = kn_mbuf_set_tag(&otgn_data_dup, gidtag, kMY_TAG_TYPE, outgoing_direction);
-    if (retval != 0) {
-        kn_debug("kn_mbuf_set_tag returned error %d\n", retval);
-        return retval;
-    }
-    
-    retval = kn_delay_pkt_inject(otgn_data, ms, outgoing_direction);
-    if (retval != 0) {
-        kn_debug("kn_delay_pkt_inject returned error %d\n", retval);
-        return retval;
-    }
-	return KERN_SUCCESS;
-	
-}
-
-void kn_fulfill_ip_ranges()
-{
-	// Google
-	kn_append_ip_range_entry_default_ports(htonl(67305984), 24, ip_range_apply_kernet);   //	4.3.2.0/24
-	kn_append_ip_range_entry_default_ports(htonl(134623232), 24, ip_range_apply_kernet);  //	8.6.48.0/21
-	kn_append_ip_range_entry_default_ports(htonl(134743040), 24, ip_range_apply_kernet);  //	8.8.4.0/24
-	kn_append_ip_range_entry_default_ports(htonl(134744064), 24, ip_range_apply_kernet);  //	8.8.8.0/24
-	kn_append_ip_range_entry_default_ports(htonl(1078218752), 21, ip_range_apply_kernet); //	64.68.80.0/21
-	kn_append_ip_range_entry_default_ports(htonl(1078220800), 21, ip_range_apply_kernet); //	64.68.88.0/21
-	kn_append_ip_range_entry_default_ports(htonl(1089052672), 19, ip_range_apply_kernet); //	64.233.160.0/19
-	kn_append_ip_range_entry_default_ports(htonl(1113980928), 20, ip_range_apply_kernet); //	66.102.0.0/20
-	kn_append_ip_range_entry_default_ports(htonl(1123631104), 19, ip_range_apply_kernet); //	66.249.64.0/19
-	kn_append_ip_range_entry_default_ports(htonl(1208926208), 18, ip_range_apply_kernet); //	72.14.192.0/18
-	kn_append_ip_range_entry_default_ports(htonl(1249705984), 16, ip_range_apply_kernet); //	74.125.0.0/16
-	kn_append_ip_range_entry_default_ports(htonl(2915172352), 16, ip_range_apply_kernet); //	173.194.0.0/16
-	kn_append_ip_range_entry_default_ports(htonl(3512041472), 17, ip_range_apply_kernet); //	209.85.128.0/17
-	kn_append_ip_range_entry_default_ports(htonl(3639549952), 19, ip_range_apply_kernet); //	216.239.32.0/19
-	
-	// Wikipedia
-	kn_append_ip_range_entry_default_ports(htonl(3494942720), 22, ip_range_apply_kernet); //	208.80.152.0/22
-	
-	// Pornhub
-	kn_append_ip_range_entry_default_ports(htonl(2454899747), 32, ip_range_apply_kernet); //	146.82.204.35/32
-	
-	// Just-Ping
-	kn_append_ip_range_entry_default_ports(htonl(1161540560), 32, ip_range_apply_kernet);	//	69.59.179.208/32
-	
-	// Dropbox
-	kn_append_ip_range_entry_default_ports(htonl(3492530741), 32, ip_range_apply_kernet);	//	208.43.202.53/32
-	kn_append_ip_range_entry_default_ports(htonl(2921607977), 32, ip_range_apply_kernet);	//	174.36.51.41/32
-	
-	// Twitter
-	kn_append_ip_range_entry_default_ports(htonl(2163406116), 32, ip_range_apply_kernet); //	128.242.245.36/32
-}
-
-
-
-
-
-
-
-
-
-
 
 errno_t kn_tcp_pkt_from_params(mbuf_t *data, u_int8_t tcph_flags, u_int32_t iph_saddr, u_int32_t iph_daddr, u_int16_t tcph_sport, u_int16_t tcph_dport, u_int32_t tcph_seq, u_int32_t tcph_ack, u_int16_t tcph_win, const char* payload, size_t payload_len) 
 {

@@ -7,14 +7,29 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		741248AC130E036B00715730 /* common.h in Headers */ = {isa = PBXBuildFile; fileRef = 741248A2130E036B00715730 /* common.h */; };
+		741248AC130E036B00715730 /* control.h in Headers */ = {isa = PBXBuildFile; fileRef = 741248A2130E036B00715730 /* control.h */; };
 		741248AD130E036B00715730 /* control.c in Sources */ = {isa = PBXBuildFile; fileRef = 741248A3130E036B00715730 /* control.c */; };
 		741248B0130E036B00715730 /* kernet-Prefix.pch in Headers */ = {isa = PBXBuildFile; fileRef = 741248A8130E036B00715730 /* kernet-Prefix.pch */; };
 		741248B1130E036B00715730 /* kext.c in Sources */ = {isa = PBXBuildFile; fileRef = 741248A9130E036B00715730 /* kext.c */; };
 		741248B2130E036B00715730 /* kext.h in Headers */ = {isa = PBXBuildFile; fileRef = 741248AA130E036B00715730 /* kext.h */; };
 		741248B3130E036B00715730 /* manipulator.c in Sources */ = {isa = PBXBuildFile; fileRef = 741248AB130E036B00715730 /* manipulator.c */; };
 		741248CD130E03EB00715730 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 741248CC130E03EB00715730 /* main.c */; };
-		741248D3130E058500715730 /* common.h in Headers */ = {isa = PBXBuildFile; fileRef = 741248A2130E036B00715730 /* common.h */; };
+		741248D3130E058500715730 /* control.h in Headers */ = {isa = PBXBuildFile; fileRef = 741248A2130E036B00715730 /* control.h */; };
+		7E0CA9291424466A00D88251 /* manipulator.h in Headers */ = {isa = PBXBuildFile; fileRef = 7E0CA9281424466A00D88251 /* manipulator.h */; };
+		7E0CA92C1424473F00D88251 /* filter.h in Headers */ = {isa = PBXBuildFile; fileRef = 7E0CA92B1424473F00D88251 /* filter.h */; };
+		7E0CA92E1424474700D88251 /* filter.c in Sources */ = {isa = PBXBuildFile; fileRef = 7E0CA92D1424474700D88251 /* filter.c */; };
+		7E327528141EFE1600D9682B /* dns.h in Headers */ = {isa = PBXBuildFile; fileRef = 7E327527141EFE1600D9682B /* dns.h */; };
+		7E32752A141EFE2700D9682B /* dns.c in Sources */ = {isa = PBXBuildFile; fileRef = 7E327529141EFE2700D9682B /* dns.c */; };
+		7E90327814233FD1008B1FAB /* wildcard.h in Headers */ = {isa = PBXBuildFile; fileRef = 7E90327714233FD1008B1FAB /* wildcard.h */; };
+		7E90327B14233FDA008B1FAB /* wildcard.c in Sources */ = {isa = PBXBuildFile; fileRef = 7E90327A14233FDA008B1FAB /* wildcard.c */; };
+		7E90327F142341ED008B1FAB /* locks.c in Sources */ = {isa = PBXBuildFile; fileRef = 7E90327E142341ED008B1FAB /* locks.c */; };
+		7E903281142341FD008B1FAB /* locks.h in Headers */ = {isa = PBXBuildFile; fileRef = 7E903280142341FD008B1FAB /* locks.h */; };
+		7E90328514243D7F008B1FAB /* common.h in Headers */ = {isa = PBXBuildFile; fileRef = 7E90328414243D7F008B1FAB /* common.h */; };
+		7E90328714243DE4008B1FAB /* ip_range.h in Headers */ = {isa = PBXBuildFile; fileRef = 7E90328614243DE4008B1FAB /* ip_range.h */; };
+		7E90328914243DF0008B1FAB /* ip_range.c in Sources */ = {isa = PBXBuildFile; fileRef = 7E90328814243DF0008B1FAB /* ip_range.c */; };
+		7E90328B142441B6008B1FAB /* debug.c in Sources */ = {isa = PBXBuildFile; fileRef = 7E90328A142441B6008B1FAB /* debug.c */; };
+		7E90328D14244438008B1FAB /* utils.h in Headers */ = {isa = PBXBuildFile; fileRef = 7E90328C14244438008B1FAB /* utils.h */; };
+		7E90328F14244441008B1FAB /* utils.c in Sources */ = {isa = PBXBuildFile; fileRef = 7E90328E14244440008B1FAB /* utils.c */; };
 		7EBA1AD9141C82DE000C94A1 /* connection.c in Sources */ = {isa = PBXBuildFile; fileRef = 7EBA1AD7141C82DE000C94A1 /* connection.c */; };
 		7EBA1ADA141C82DE000C94A1 /* connection.h in Headers */ = {isa = PBXBuildFile; fileRef = 7EBA1AD8141C82DE000C94A1 /* connection.h */; };
 		7EF3551013FE90530049B88C /* ios_supporting.c in Sources */ = {isa = PBXBuildFile; fileRef = 7EF3550F13FE90530049B88C /* ios_supporting.c */; };
@@ -35,14 +50,29 @@
 /* Begin PBXFileReference section */
 		74124890130E033600715730 /* kernet.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = kernet.kext; sourceTree = BUILT_PRODUCTS_DIR; };
 		74124894130E033600715730 /* Kernel.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Kernel.framework; path = System/Library/Frameworks/Kernel.framework; sourceTree = SDKROOT; };
-		741248A2130E036B00715730 /* common.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = common.h; path = kernet_kext/common.h; sourceTree = SOURCE_ROOT; };
-		741248A3130E036B00715730 /* control.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = control.c; path = kernet_kext/control.c; sourceTree = SOURCE_ROOT; };
+		741248A2130E036B00715730 /* control.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; lineEnding = 0; name = control.h; path = kernet_kext/control.h; sourceTree = SOURCE_ROOT; xcLanguageSpecificationIdentifier = xcode.lang.objcpp; };
+		741248A3130E036B00715730 /* control.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; lineEnding = 0; name = control.c; path = kernet_kext/control.c; sourceTree = SOURCE_ROOT; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		741248A7130E036B00715730 /* kernet-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = "kernet-Info.plist"; path = "kernet_kext/kernet-Info.plist"; sourceTree = SOURCE_ROOT; };
-		741248A8130E036B00715730 /* kernet-Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "kernet-Prefix.pch"; path = "kernet_kext/kernet-Prefix.pch"; sourceTree = SOURCE_ROOT; };
+		741248A8130E036B00715730 /* kernet-Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; lineEnding = 0; name = "kernet-Prefix.pch"; path = "kernet_kext/kernet-Prefix.pch"; sourceTree = SOURCE_ROOT; xcLanguageSpecificationIdentifier = xcode.lang.objc; };
 		741248A9130E036B00715730 /* kext.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; lineEnding = 0; name = kext.c; path = kernet_kext/kext.c; sourceTree = SOURCE_ROOT; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		741248AA130E036B00715730 /* kext.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = kext.h; path = kernet_kext/kext.h; sourceTree = SOURCE_ROOT; };
 		741248AB130E036B00715730 /* manipulator.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = manipulator.c; path = kernet_kext/manipulator.c; sourceTree = SOURCE_ROOT; };
 		741248CC130E03EB00715730 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
+		7E0CA9281424466A00D88251 /* manipulator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = manipulator.h; path = kernet_kext/manipulator.h; sourceTree = SOURCE_ROOT; };
+		7E0CA92B1424473F00D88251 /* filter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = filter.h; path = kernet_kext/filter.h; sourceTree = SOURCE_ROOT; };
+		7E0CA92D1424474700D88251 /* filter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = filter.c; path = kernet_kext/filter.c; sourceTree = SOURCE_ROOT; };
+		7E327527141EFE1600D9682B /* dns.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = dns.h; path = kernet_kext/dns.h; sourceTree = SOURCE_ROOT; };
+		7E327529141EFE2700D9682B /* dns.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dns.c; path = kernet_kext/dns.c; sourceTree = SOURCE_ROOT; };
+		7E90327714233FD1008B1FAB /* wildcard.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = wildcard.h; path = kernet_kext/wildcard.h; sourceTree = SOURCE_ROOT; };
+		7E90327A14233FDA008B1FAB /* wildcard.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = wildcard.c; path = kernet_kext/wildcard.c; sourceTree = SOURCE_ROOT; };
+		7E90327E142341ED008B1FAB /* locks.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = locks.c; path = kernet_kext/locks.c; sourceTree = SOURCE_ROOT; };
+		7E903280142341FD008B1FAB /* locks.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = locks.h; path = kernet_kext/locks.h; sourceTree = SOURCE_ROOT; };
+		7E90328414243D7F008B1FAB /* common.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = common.h; path = kernet_kext/common.h; sourceTree = SOURCE_ROOT; };
+		7E90328614243DE4008B1FAB /* ip_range.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ip_range.h; path = kernet_kext/ip_range.h; sourceTree = SOURCE_ROOT; };
+		7E90328814243DF0008B1FAB /* ip_range.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ip_range.c; path = kernet_kext/ip_range.c; sourceTree = SOURCE_ROOT; };
+		7E90328A142441B6008B1FAB /* debug.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = debug.c; path = kernet_kext/debug.c; sourceTree = SOURCE_ROOT; };
+		7E90328C14244438008B1FAB /* utils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = utils.h; path = kernet_kext/utils.h; sourceTree = SOURCE_ROOT; };
+		7E90328E14244440008B1FAB /* utils.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = utils.c; path = kernet_kext/utils.c; sourceTree = SOURCE_ROOT; };
 		7EAC855513FE6E14005C6EE9 /* kernet_cli */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = kernet_cli; sourceTree = BUILT_PRODUCTS_DIR; };
 		7EBA1AD7141C82DE000C94A1 /* connection.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; lineEnding = 0; name = connection.c; path = kernet_kext/connection.c; sourceTree = SOURCE_ROOT; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		7EBA1AD8141C82DE000C94A1 /* connection.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; lineEnding = 0; name = connection.h; path = kernet_kext/connection.h; sourceTree = SOURCE_ROOT; xcLanguageSpecificationIdentifier = xcode.lang.objcpp; };
@@ -102,16 +132,31 @@
 		74124895130E033600715730 /* kernet_kext */ = {
 			isa = PBXGroup;
 			children = (
-				7EBA1AD7141C82DE000C94A1 /* connection.c */,
+				7E90328414243D7F008B1FAB /* common.h */,
+				7E90328A142441B6008B1FAB /* debug.c */,
 				7EBA1AD8141C82DE000C94A1 /* connection.h */,
+				7EBA1AD7141C82DE000C94A1 /* connection.c */,
 				741248B4130E037B00715730 /* Supporting files */,
-				741248A2130E036B00715730 /* common.h */,
+				741248A2130E036B00715730 /* control.h */,
 				741248A3130E036B00715730 /* control.c */,
-				741248A9130E036B00715730 /* kext.c */,
 				741248AA130E036B00715730 /* kext.h */,
+				741248A9130E036B00715730 /* kext.c */,
+				7E0CA9281424466A00D88251 /* manipulator.h */,
 				741248AB130E036B00715730 /* manipulator.c */,
 				7EEF495F1371222E006845E2 /* not-working.c */,
 				7EF3550F13FE90530049B88C /* ios_supporting.c */,
+				7E327527141EFE1600D9682B /* dns.h */,
+				7E327529141EFE2700D9682B /* dns.c */,
+				7E90327714233FD1008B1FAB /* wildcard.h */,
+				7E90327A14233FDA008B1FAB /* wildcard.c */,
+				7E903280142341FD008B1FAB /* locks.h */,
+				7E90327E142341ED008B1FAB /* locks.c */,
+				7E90328614243DE4008B1FAB /* ip_range.h */,
+				7E90328814243DF0008B1FAB /* ip_range.c */,
+				7E90328C14244438008B1FAB /* utils.h */,
+				7E90328E14244440008B1FAB /* utils.c */,
+				7E0CA92B1424473F00D88251 /* filter.h */,
+				7E0CA92D1424474700D88251 /* filter.c */,
 			);
 			name = kernet_kext;
 			path = kernet;
@@ -151,10 +196,18 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				741248AC130E036B00715730 /* common.h in Headers */,
+				741248AC130E036B00715730 /* control.h in Headers */,
 				741248B0130E036B00715730 /* kernet-Prefix.pch in Headers */,
 				741248B2130E036B00715730 /* kext.h in Headers */,
 				7EBA1ADA141C82DE000C94A1 /* connection.h in Headers */,
+				7E327528141EFE1600D9682B /* dns.h in Headers */,
+				7E90327814233FD1008B1FAB /* wildcard.h in Headers */,
+				7E903281142341FD008B1FAB /* locks.h in Headers */,
+				7E90328514243D7F008B1FAB /* common.h in Headers */,
+				7E90328714243DE4008B1FAB /* ip_range.h in Headers */,
+				7E90328D14244438008B1FAB /* utils.h in Headers */,
+				7E0CA9291424466A00D88251 /* manipulator.h in Headers */,
+				7E0CA92C1424473F00D88251 /* filter.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -162,7 +215,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				741248D3130E058500715730 /* common.h in Headers */,
+				741248D3130E058500715730 /* control.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -262,6 +315,13 @@
 				741248B3130E036B00715730 /* manipulator.c in Sources */,
 				7EF3551013FE90530049B88C /* ios_supporting.c in Sources */,
 				7EBA1AD9141C82DE000C94A1 /* connection.c in Sources */,
+				7E32752A141EFE2700D9682B /* dns.c in Sources */,
+				7E90327B14233FDA008B1FAB /* wildcard.c in Sources */,
+				7E90327F142341ED008B1FAB /* locks.c in Sources */,
+				7E90328914243DF0008B1FAB /* ip_range.c in Sources */,
+				7E90328B142441B6008B1FAB /* debug.c in Sources */,
+				7E90328F14244441008B1FAB /* utils.c in Sources */,
+				7E0CA92E1424474700D88251 /* filter.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
