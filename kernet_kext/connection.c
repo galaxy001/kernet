@@ -40,17 +40,14 @@ struct connection_block_list connection_block_list;
 errno_t kn_connection_initialize()
 {
     kn_alloc_connection_block_list();
-    kn_register_deferred_packet_watchdog();
     return 0;
 }
 
 errno_t kn_connection_close()
 {
     kn_free_connection_block_list();
-    kn_unregister_deferred_packet_watchdog();
     return 0;
 }
-
 
 void kn_alloc_connection_block_list() {
     TAILQ_INIT(&connection_block_list);
@@ -142,6 +139,16 @@ void kn_move_connection_block_to_tail(struct connection_block *b)
     lck_mtx_lock(gConnectionBlockListLock);
     TAILQ_REMOVE(&connection_block_list, b, link);
     TAILQ_INSERT_TAIL(&connection_block_list, b, link);
+    lck_mtx_unlock(gConnectionBlockListLock);
+}
+
+void kn_reinject_all_deferred_packets_for_all()
+{
+    lck_mtx_lock(gConnectionBlockListLock);
+    struct connection_block *b, *tmp;
+    TAILQ_FOREACH_SAFE(b, &connection_block_list, link, tmp) {
+        kn_cb_reinject_deferred_packets(b);
+    }
     lck_mtx_unlock(gConnectionBlockListLock);
 }
 
@@ -250,6 +257,24 @@ errno_t kn_cb_reinject_deferred_packets(struct connection_block* cb)
     return ret;
 }
 
+connection_state kn_cb_state(struct connection_block* cb)
+{
+    connection_state ret;
+    lck_mtx_lock(cb->lock);
+    ret = cb->state;
+    lck_mtx_unlock(cb->lock);
+    return ret;
+}
+
+void kn_cb_set_state(struct connection_block* cb, connection_state state)
+{
+    lck_mtx_lock(cb->lock);
+    cb->state = state;
+    lck_mtx_unlock(cb->lock);
+    return;
+}
+
+
 errno_t kn_reinject_deferred_packet(socket_t so, struct deferred_packet *p)
 {
     kn_debug("kn_reinject_deferred_packet\n");
@@ -312,14 +337,9 @@ void kn_deferred_packet_watchdog_timer(void *param)
 void kn_register_deferred_packet_watchdog()
 {
     struct timespec ts;
-    int timeout; 
-    
-    kn_lock_shared_master_record();
-    timeout = master_record.RST_timeout;
-    kn_unlock_shared_master_record();
     
     ts.tv_sec = 0;
-    ts.tv_nsec = 1000000 * timeout;
+    ts.tv_nsec = 1000000 * kn_mr_RST_timeout();
     
     bsd_timeout(kn_deferred_packet_watchdog_timer, NULL, &ts);
 }

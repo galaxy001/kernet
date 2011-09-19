@@ -53,6 +53,7 @@ struct connection_block* kn_find_connection_block_with_socket_in_list(socket_t s
 void kn_remove_connection_block_from_list(struct connection_block *b);
 void kn_add_connection_block_to_list(struct connection_block *b);
 void kn_move_connection_block_to_tail(struct connection_block *b);
+void kn_reinject_all_deferred_packets_for_all();
 
 void kn_print_connection_block(struct connection_block* b);
 struct connection_block* kn_alloc_connection_block();
@@ -61,6 +62,9 @@ void kn_free_connection_block(struct connection_block* b);
 errno_t kn_cb_add_deferred_packet(struct connection_block* cb, mbuf_t data, mbuf_t control, sflt_data_flag_t flags, const struct sockaddr *to);
 errno_t kn_reinject_deferred_packet(socket_t so, struct deferred_packet *p);
 errno_t kn_cb_reinject_deferred_packets(struct connection_block *cb);
+
+connection_state kn_cb_state(struct connection_block* cb);
+void kn_cb_set_state(struct connection_block* cb, connection_state state);
 
 void kn_register_deferred_packet_watchdog();
 void kn_unregister_deferred_packet_watchdog();

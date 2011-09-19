@@ -29,5 +29,7 @@ void kn_free_connection_block_list_lock();
 
 inline void kn_lock_shared_master_record() { lck_rw_lock_shared(gMasterRecordLock); };
 inline void kn_unlock_shared_master_record() { lck_rw_unlock_shared(gMasterRecordLock); };
+inline void kn_lock_exclusive_master_record() { lck_rw_lock_exclusive(gMasterRecordLock); };
+inline void kn_unlock_exclusive_master_record() { lck_rw_unlock_exclusive(gMasterRecordLock); };
 
 #endif

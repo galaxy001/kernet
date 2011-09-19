@@ -84,7 +84,7 @@ errno_t kn_ip_input_fn (void *cookie, mbuf_t *data, int offset, u_int8_t protoco
 	len = mbuf_len(*data);
 	iph = (struct ip*) mbuf_data(*data);
 	
-	if (protocol == IPPROTO_UDP) {
+	if (kn_mr_fake_DNS_response_dropping_enabled() && protocol == IPPROTO_UDP) {
 		if (len < (offset + sizeof(struct udphdr)))
 			return KERN_SUCCESS; // total packet length < sizeof(ip + udp)
 		
@@ -136,13 +136,13 @@ errno_t kn_ip_input_fn (void *cookie, mbuf_t *data, int offset, u_int8_t protoco
 		
 		tcph = (struct tcphdr*)((char*)iph + offset);
         
-        if (tcph->th_flags & TH_RST) {
+        if (kn_mr_RST_detection_enabled() && (tcph->th_flags & TH_RST)) {
             struct connection_block *cb = kn_find_connection_block_with_address_in_list(iph->ip_dst.s_addr, iph->ip_src.s_addr, tcph->th_dport, tcph->th_sport);
             if (cb) {
-                if (cb->state == injected_RST) {
+                if (kn_cb_state(cb)) {
                     kn_debug("cb: %X received RST\n", cb);
+                    kn_cb_set_state(cb, received_RST);
                     kn_cb_reinject_deferred_packets(cb);
-                    cb->state = received_RST;
                     sflt_detach(cb->socket, KERNET_HANDLE);
                 }
                 else {
@@ -154,12 +154,12 @@ errno_t kn_ip_input_fn (void *cookie, mbuf_t *data, int offset, u_int8_t protoco
             }
         }
 		
-		if (tcph->th_flags & TH_SYN) { // flags & SYN 
+		if (kn_mr_injection_enabled() && (tcph->th_flags & TH_SYN)) { // flags & SYN 
             struct connection_block *cb = kn_find_connection_block_with_address_in_list(iph->ip_dst.s_addr, iph->ip_src.s_addr, tcph->th_dport, tcph->th_sport);
             if (cb) {
                 retval = kn_inject_after_synack(*data);
                 if (retval == 0) {
-                    cb->state = injected_RST;
+                    kn_cb_set_state(cb, received_RST);
                     kn_debug("cb: %X injected RST\n", cb);
                 }
             }
@@ -246,13 +246,17 @@ errno_t kn_sflt_data_out_fn (void *cookie, socket_t so, const struct sockaddr *t
         return KERN_SUCCESS;
     }
     
-    if (cb->state == received_RST || cb->state == RST_timeout) {
+    connection_state state = kn_cb_state(cb);
+    
+    if (state == received_RST || state == RST_timeout) {
         sflt_detach(so, KERNET_HANDLE);
         return KERN_SUCCESS;
     }
     else {
-        kn_cb_add_deferred_packet(cb, *data, *control, flags, to);
-        kn_debug("cb: %X added deferred packet\n", cb);
+        if (kn_mr_packet_delay_enabled()) {
+            kn_cb_add_deferred_packet(cb, *data, *control, flags, to);
+            kn_debug("cb: %X added deferred packet\n", cb);
+        }
         return EJUSTRETURN;
     }
 	return KERN_SUCCESS;
