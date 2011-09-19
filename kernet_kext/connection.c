@@ -33,6 +33,7 @@
 #include "locks.h"
 #include "utils.h"
 #include "manipulator.h"
+#include "mr.h"
 
 TAILQ_HEAD(connection_block_list, connection_block);
 struct connection_block_list connection_block_list;
@@ -296,9 +297,7 @@ void kn_deferred_packet_watchdog_timer(void *param)
     int retval = 0;
     int timeout; 
     
-    kn_lock_shared_master_record();
-    timeout = master_record.RST_timeout;
-    kn_unlock_shared_master_record();
+    timeout = kn_mr_RST_timeout();
     
     microtime(&tv_now);
     

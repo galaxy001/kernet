@@ -36,6 +36,7 @@
 #include "manipulator.h"
 #include "control.h"
 #include "filter.h"
+#include "mr.h"
 
 boolean_t		gipFilterRegistered = FALSE;
 boolean_t		gsfltFilterRegistered = FALSE;
