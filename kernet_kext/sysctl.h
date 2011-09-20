@@ -9,8 +9,6 @@
 #ifndef SYSCTL_H
 #define SYSCTL_H
 
-#define CAST_PTR_INT(X) (*((int*)(X)))
-
 errno_t kn_register_sysctls();
 errno_t kn_unregister_sysctls();
 

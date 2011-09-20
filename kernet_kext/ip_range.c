@@ -73,6 +73,9 @@ void kn_fulfill_ip_ranges()
     
     // Facebook
     kn_append_readable_ip_range_entry_default_ports("69.63.176.0", 20, ip_range_apply_kernet);  //199.59.148.0/22
+    
+    // Kenengba.com
+    kn_append_readable_ip_range_entry_default_ports("106.187.34.220", 32, ip_range_apply_kernet);
 
 }
 

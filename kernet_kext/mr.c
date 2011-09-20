@@ -174,6 +174,7 @@ void kn_mr_enable_default_services()
     kn_mr_set_fake_DNS_response_dropping_enabled(TRUE);
     kn_mr_set_packet_delay_enabled(TRUE);
     kn_mr_set_watchdog_enabled(TRUE);
+    kn_mr_set_RST_detection_enabled(TRUE);
 }
 
 void kn_mr_disable_all_services()
@@ -183,4 +184,5 @@ void kn_mr_disable_all_services()
     kn_mr_set_fake_DNS_response_dropping_enabled(FALSE);
     kn_mr_set_packet_delay_enabled(FALSE);
     kn_mr_set_watchdog_enabled(FALSE);
+    kn_mr_set_RST_detection_enabled(FALSE);
 }

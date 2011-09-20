@@ -20,6 +20,10 @@
 		7E0CA92E1424474700D88251 /* filter.c in Sources */ = {isa = PBXBuildFile; fileRef = 7E0CA92D1424474700D88251 /* filter.c */; };
 		7E327528141EFE1600D9682B /* dns.h in Headers */ = {isa = PBXBuildFile; fileRef = 7E327527141EFE1600D9682B /* dns.h */; };
 		7E32752A141EFE2700D9682B /* dns.c in Sources */ = {isa = PBXBuildFile; fileRef = 7E327529141EFE2700D9682B /* dns.c */; };
+		7E34C459142761E700F07C8E /* sysctl.c in Sources */ = {isa = PBXBuildFile; fileRef = 7E34C458142761E700F07C8E /* sysctl.c */; };
+		7E34C45C1427620B00F07C8E /* sysctl.h in Headers */ = {isa = PBXBuildFile; fileRef = 7E34C45B1427620A00F07C8E /* sysctl.h */; };
+		7E34C45E1427859200F07C8E /* mr.h in Headers */ = {isa = PBXBuildFile; fileRef = 7E34C45D1427859200F07C8E /* mr.h */; };
+		7E34C460142785CC00F07C8E /* mr.c in Sources */ = {isa = PBXBuildFile; fileRef = 7E34C45F142785CC00F07C8E /* mr.c */; };
 		7E90327814233FD1008B1FAB /* wildcard.h in Headers */ = {isa = PBXBuildFile; fileRef = 7E90327714233FD1008B1FAB /* wildcard.h */; };
 		7E90327B14233FDA008B1FAB /* wildcard.c in Sources */ = {isa = PBXBuildFile; fileRef = 7E90327A14233FDA008B1FAB /* wildcard.c */; };
 		7E90327F142341ED008B1FAB /* locks.c in Sources */ = {isa = PBXBuildFile; fileRef = 7E90327E142341ED008B1FAB /* locks.c */; };
@@ -63,6 +67,10 @@
 		7E0CA92D1424474700D88251 /* filter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = filter.c; path = kernet_kext/filter.c; sourceTree = SOURCE_ROOT; };
 		7E327527141EFE1600D9682B /* dns.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = dns.h; path = kernet_kext/dns.h; sourceTree = SOURCE_ROOT; };
 		7E327529141EFE2700D9682B /* dns.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dns.c; path = kernet_kext/dns.c; sourceTree = SOURCE_ROOT; };
+		7E34C458142761E700F07C8E /* sysctl.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sysctl.c; path = kernet_kext/sysctl.c; sourceTree = SOURCE_ROOT; };
+		7E34C45B1427620A00F07C8E /* sysctl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sysctl.h; path = kernet_kext/sysctl.h; sourceTree = SOURCE_ROOT; };
+		7E34C45D1427859200F07C8E /* mr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mr.h; path = kernet_kext/mr.h; sourceTree = SOURCE_ROOT; };
+		7E34C45F142785CC00F07C8E /* mr.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = mr.c; path = kernet_kext/mr.c; sourceTree = SOURCE_ROOT; };
 		7E90327714233FD1008B1FAB /* wildcard.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = wildcard.h; path = kernet_kext/wildcard.h; sourceTree = SOURCE_ROOT; };
 		7E90327A14233FDA008B1FAB /* wildcard.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = wildcard.c; path = kernet_kext/wildcard.c; sourceTree = SOURCE_ROOT; };
 		7E90327E142341ED008B1FAB /* locks.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = locks.c; path = kernet_kext/locks.c; sourceTree = SOURCE_ROOT; };
@@ -157,6 +165,10 @@
 				7E90328E14244440008B1FAB /* utils.c */,
 				7E0CA92B1424473F00D88251 /* filter.h */,
 				7E0CA92D1424474700D88251 /* filter.c */,
+				7E34C45B1427620A00F07C8E /* sysctl.h */,
+				7E34C458142761E700F07C8E /* sysctl.c */,
+				7E34C45D1427859200F07C8E /* mr.h */,
+				7E34C45F142785CC00F07C8E /* mr.c */,
 			);
 			name = kernet_kext;
 			path = kernet;
@@ -208,6 +220,8 @@
 				7E90328D14244438008B1FAB /* utils.h in Headers */,
 				7E0CA9291424466A00D88251 /* manipulator.h in Headers */,
 				7E0CA92C1424473F00D88251 /* filter.h in Headers */,
+				7E34C45C1427620B00F07C8E /* sysctl.h in Headers */,
+				7E34C45E1427859200F07C8E /* mr.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -322,6 +336,8 @@
 				7E90328B142441B6008B1FAB /* debug.c in Sources */,
 				7E90328F14244441008B1FAB /* utils.c in Sources */,
 				7E0CA92E1424474700D88251 /* filter.c in Sources */,
+				7E34C459142761E700F07C8E /* sysctl.c in Sources */,
+				7E34C460142785CC00F07C8E /* mr.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

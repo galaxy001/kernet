@@ -24,6 +24,9 @@
 #define toupper(c)	((c) - 0x20 * (((c) >= 'a') && ((c) <= 'z')))
 #define tolower(c)	((c) + 0x20 * (((c) >= 'A') && ((c) <= 'Z')))
 
+#define IN_RANGE(i, min, max) (i < min) || (i > max) ? 1 : 0
+#define CAST_PTR_INT(X) (*((int*)(X)))
+
 char* kn_inet_ntoa_simple(u_int32_t ina);
 char* kn_inet_ntoa(u_int32_t ina, char* buf);
 int kn_inet_aton(const char *cp, u_int32_t *addr);
