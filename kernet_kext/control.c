@@ -29,18 +29,60 @@
 #include <stdarg.h>
 #include <sys/queue.h>
 
+#include "control.h"
 #include "kext.h"
+#include "locks.h"
+#include "ip_range.h"
+#include "utils.h"
+
+static struct kern_ctl_reg kn_ctl_reg = {
+	KERNET_BUNDLEID,
+	0,
+	0,
+	0, 
+	0,
+	(1024),
+	kn_ctl_connect_fn,
+	kn_ctl_disconnect_fn,
+	kn_ctl_send_fn,
+	kn_ctl_setopt_fn,
+	kn_ctl_getopt_fn,
+};
+
+kern_ctl_ref kn_ctl_ref;
+
+boolean_t       gKernCtlRegistered = FALSE;
+
+errno_t kn_control_initialize()
+{
+    int retval = 0;
+//    retval = ctl_register(&kn_ctl_reg, &kn_ctl_ref);
+//	if (retval == 0) {
+//		kn_debug("ctl_register id 0x%x, ref 0x%x \n", kn_ctl_reg.ctl_id, kn_ctl_ref);
+//		gKernCtlRegistered = TRUE;
+//	}
+//	else
+//	{
+//		kn_debug("ctl_register returned error %d\n", retval);
+//	}
+    return retval;
+}
+
+errno_t kn_control_close()
+{
+    int retval = 0;
+    if (gKernCtlRegistered == TRUE) {
+        retval = ctl_deregister(kn_ctl_ref);
+        gKernCtlRegistered = FALSE;
+    }
+    return retval;
+}
 
 errno_t kn_ctl_connect_fn(kern_ctl_ref kctlref, struct sockaddr_ctl *sac, void **unitinfo)
 {
     struct control_block_t* cb;
     errno_t retval = 0;
     
-    lck_rw_lock_shared(gMasterRecordLock);
-    if (master_record.cb != NULL) {
-        retval = ECONNREFUSED;
-    }
-    lck_rw_unlock_shared(gMasterRecordLock);
     if (retval != 0) {
         goto FAILURE;
     }
@@ -58,10 +100,6 @@ errno_t kn_ctl_connect_fn(kern_ctl_ref kctlref, struct sockaddr_ctl *sac, void *
     cb->ref = kctlref;
     cb->connected = TRUE;
     
-    lck_rw_lock_exclusive(gMasterRecordLock);
-    master_record.cb = cb;
-    lck_rw_unlock_exclusive(gMasterRecordLock);
-
     *unitinfo = cb;
     
     return KERN_SUCCESS;
@@ -76,17 +114,10 @@ FAILURE:
 errno_t kn_ctl_disconnect_fn(kern_ctl_ref kctlref, u_int32_t unit, void *unitinfo)
 {
     struct control_block_t *cb;
-    lck_rw_lock_shared(gMasterRecordLock);
-    cb = master_record.cb;
-    lck_rw_unlock_shared(gMasterRecordLock);
     if (cb == NULL || cb->unit != unit) {
         kn_debug("progma error. disconnecting a unknown control socket\n");
         return KERN_SUCCESS;
     }
-    
-    lck_rw_lock_exclusive(gMasterRecordLock);
-    master_record.cb = NULL;
-    lck_rw_unlock_exclusive(gMasterRecordLock);
     
     OSFree(cb, sizeof(struct control_block_t), gOSMallocTag);
     
@@ -104,9 +135,6 @@ errno_t kn_ctl_send_fn(kern_ctl_ref kctlref, u_int32_t unit, void *unitinfo, mbu
 {
     struct control_block_t *cb;
     errno_t retval = 0;
-    lck_rw_lock_shared(gMasterRecordLock);
-    cb = master_record.cb;
-    lck_rw_unlock_shared(gMasterRecordLock);
     if (cb == NULL || cb->unit != unit) {
         kn_debug("progma error. disconnecting a unknown control socket\n");
         return KERN_SUCCESS;
@@ -165,27 +193,27 @@ errno_t kn_ctl_parse_request(mbuf_t data)
             r_policy = ip_range_apply_kernet;
         }
         else if (opt_req->policy == IP_RANGE_POLICY_IGNORE) {
-            r_policy = ip_range_stay_away;
+            r_policy = ip_range_direct;
         }
         else {
             kn_debug("req->id %d, progma error. optcode 0x%X, unknown policy 0x%X\n", req->id, req->opt_code, opt_req->policy);
             return EBADMSG;
         }
         
-        retval = kn_append_ip_range_entry(opt_req->ip, opt_req->prefix, opt_req->port, r_policy);
+        retval = kn_append_ip_range_entry(opt_req->ip, opt_req->netmask_bits, opt_req->port, r_policy);
         if (retval == E_ALREADY_EXIST) {
-            kn_debug("req->id %d, optcode 0x%X tried to append existing range %s:%d\n", req->id, req->opt_code, kn_inet_ntoa_simple(opt_req->ip), opt_req->prefix);
+            kn_debug("req->id %d, optcode 0x%X tried to append existing range %s:%d\n", req->id, req->opt_code, kn_inet_ntoa_simple(opt_req->ip), opt_req->netmask_bits);
             kn_ctl_send_response(req->id, req->opt_code, E_ALREADY_EXIST);
             return retval;
         }
         if (retval == E_UPDATED) {
-            kn_debug("req->id %d, optcode 0x%X updated existing range %s:%d\n", req->id, req->opt_code, kn_inet_ntoa_simple(opt_req->ip), opt_req->prefix);
+            kn_debug("req->id %d, optcode 0x%X updated existing range %s:%d\n", req->id, req->opt_code, kn_inet_ntoa_simple(opt_req->ip), opt_req->netmask_bits);
             kn_ctl_send_response(req->id, req->opt_code, E_UPDATED);
             return retval;
         }
 
         else if (retval == 0) {
-            kn_debug("req->id %d, optcode 0x%X succeeded appending range %s:%d\n", req->id, req->opt_code, kn_inet_ntoa_simple(opt_req->ip), opt_req->prefix);
+            kn_debug("req->id %d, optcode 0x%X succeeded appending range %s:%d\n", req->id, req->opt_code, kn_inet_ntoa_simple(opt_req->ip), opt_req->netmask_bits);
             kn_ctl_send_response(req->id, req->opt_code, E_OKAY);
             return KERN_SUCCESS;
         }
@@ -203,15 +231,15 @@ errno_t kn_ctl_parse_request(mbuf_t data)
         
         opt_req = (struct remove_ip_range_req_t*)(buf + sizeof(struct request_t));
         
-        retval = kn_remove_ip_range_entry(opt_req->ip, opt_req->prefix, opt_req->port);
+        retval = kn_remove_ip_range_entry(opt_req->ip, opt_req->netmask_bits, opt_req->port);
         if (retval == E_DONT_EXIT) {
-            kn_debug("req->id %d, optcode 0x%X tried to remove non-existing range %s:%d\n", req->id, req->opt_code, kn_inet_ntoa_simple(opt_req->ip), opt_req->prefix);
+            kn_debug("req->id %d, optcode 0x%X tried to remove non-existing range %s:%d\n", req->id, req->opt_code, kn_inet_ntoa_simple(opt_req->ip), opt_req->netmask_bits);
             kn_ctl_send_response(req->id, req->opt_code, E_DONT_EXIT);
             return retval;
         }
         
         else if (retval == 0) {
-            kn_debug("req->id %d, optcode 0x%X succeeded removing range %s:%d\n", req->id, req->opt_code, kn_inet_ntoa_simple(opt_req->ip), opt_req->prefix);
+            kn_debug("req->id %d, optcode 0x%X succeeded removing range %s:%d\n", req->id, req->opt_code, kn_inet_ntoa_simple(opt_req->ip), opt_req->netmask_bits);
             kn_ctl_send_response(req->id, req->opt_code, E_OKAY);
             return KERN_SUCCESS;
         }
@@ -229,10 +257,7 @@ errno_t kn_ctl_send_response(u_int32_t req_id, u_int8_t opt_code, u_int32_t stat
     errno_t retval = 0;
     struct control_block_t *cb;
     struct response_t response;
-
-    lck_rw_lock_shared(gMasterRecordLock);
-    cb = master_record.cb;
-    lck_rw_unlock_shared(gMasterRecordLock);
+    
     if (cb == NULL) {
         kn_debug("progma error. attempt to send to non-existing client\n");
         return ENOTCONN;
