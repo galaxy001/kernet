@@ -195,11 +195,6 @@ errno_t kn_append_ip_range_entry_default_ports(u_int32_t ip, u_int8_t netmask_bi
 {
     errno_t retval = 0;
     retval = kn_append_ip_range_entry(ip, netmask_bits, htons(80), policy);
-    if (retval != 0)
-        return retval;
-    retval = kn_append_ip_range_entry(ip, netmask_bits, htons(443), policy);
-    if (retval != 0)
-        return retval;
     return retval;
 }
 
@@ -207,11 +202,6 @@ errno_t kn_remove_ip_range_entry_default_ports(u_int32_t ip, u_int8_t netmask_bi
 {
     errno_t retval = 0;
     retval = kn_remove_ip_range_entry(ip, netmask_bits, htons(80));
-    if (retval != 0)
-        return retval;
-    retval = kn_remove_ip_range_entry(ip, netmask_bits, htons(443));
-    if (retval != 0)
-        return retval;
     return retval;
 }
 
@@ -222,10 +212,5 @@ errno_t kn_append_readable_ip_range_entry_default_ports(const char* ip, u_int8_t
     kn_inet_aton(ip, &addr);
 
     retval = kn_append_ip_range_entry(addr, netmask_bits, htons(80), policy);
-    if (retval != 0)
-        return retval;
-    retval = kn_append_ip_range_entry(addr, netmask_bits, htons(443), policy);
-    if (retval != 0)
-        return retval;
     return retval;
 }
