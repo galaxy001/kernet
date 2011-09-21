@@ -24,6 +24,7 @@
 		7E34C45C1427620B00F07C8E /* sysctl.h in Headers */ = {isa = PBXBuildFile; fileRef = 7E34C45B1427620A00F07C8E /* sysctl.h */; };
 		7E34C45E1427859200F07C8E /* mr.h in Headers */ = {isa = PBXBuildFile; fileRef = 7E34C45D1427859200F07C8E /* mr.h */; };
 		7E34C460142785CC00F07C8E /* mr.c in Sources */ = {isa = PBXBuildFile; fileRef = 7E34C45F142785CC00F07C8E /* mr.c */; };
+		7E7C12EE1429AD7200471DF4 /* notes in Resources */ = {isa = PBXBuildFile; fileRef = 7E7C12ED1429AD7100471DF4 /* notes */; };
 		7E90327814233FD1008B1FAB /* wildcard.h in Headers */ = {isa = PBXBuildFile; fileRef = 7E90327714233FD1008B1FAB /* wildcard.h */; };
 		7E90327B14233FDA008B1FAB /* wildcard.c in Sources */ = {isa = PBXBuildFile; fileRef = 7E90327A14233FDA008B1FAB /* wildcard.c */; };
 		7E90327F142341ED008B1FAB /* locks.c in Sources */ = {isa = PBXBuildFile; fileRef = 7E90327E142341ED008B1FAB /* locks.c */; };
@@ -71,6 +72,9 @@
 		7E34C45B1427620A00F07C8E /* sysctl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sysctl.h; path = kernet_kext/sysctl.h; sourceTree = SOURCE_ROOT; };
 		7E34C45D1427859200F07C8E /* mr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mr.h; path = kernet_kext/mr.h; sourceTree = SOURCE_ROOT; };
 		7E34C45F142785CC00F07C8E /* mr.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = mr.c; path = kernet_kext/mr.c; sourceTree = SOURCE_ROOT; };
+		7E7C12EA1429AB7400471DF4 /* iOS-build.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "iOS-build.txt"; sourceTree = "<group>"; };
+		7E7C12EB1429AB7400471DF4 /* remote-debug.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "remote-debug.txt"; sourceTree = "<group>"; };
+		7E7C12ED1429AD7100471DF4 /* notes */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = notes; sourceTree = "<group>"; };
 		7E90327714233FD1008B1FAB /* wildcard.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = wildcard.h; path = kernet_kext/wildcard.h; sourceTree = SOURCE_ROOT; };
 		7E90327A14233FDA008B1FAB /* wildcard.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = wildcard.c; path = kernet_kext/wildcard.c; sourceTree = SOURCE_ROOT; };
 		7E90327E142341ED008B1FAB /* locks.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = locks.c; path = kernet_kext/locks.c; sourceTree = SOURCE_ROOT; };
@@ -194,11 +198,22 @@
 		743EFCCA130DE8E800CD5B72 = {
 			isa = PBXGroup;
 			children = (
+				7E7C12E91429AB7400471DF4 /* docs */,
 				74124895130E033600715730 /* kernet_kext */,
 				741248CB130E03EA00715730 /* kernet_cli */,
 				74124892130E033600715730 /* Frameworks */,
 				74124891130E033600715730 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		7E7C12E91429AB7400471DF4 /* docs */ = {
+			isa = PBXGroup;
+			children = (
+				7E7C12EA1429AB7400471DF4 /* iOS-build.txt */,
+				7E7C12EB1429AB7400471DF4 /* remote-debug.txt */,
+				7E7C12ED1429AD7100471DF4 /* notes */,
+			);
+			path = docs;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -304,6 +319,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7E7C12EE1429AD7200471DF4 /* notes in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

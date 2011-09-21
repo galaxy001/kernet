@@ -299,6 +299,8 @@ void kn_deferred_packet_watchdog_timer(void *param)
     
     timeout = kn_mr_RST_timeout_safe();
     
+    kn_debug("kn_deferred_packet_watchdog_timer got called\n");
+    
     microtime(&tv_now);
     
     lck_mtx_lock(gConnectionBlockListLock);
@@ -329,6 +331,8 @@ void kn_deferred_packet_watchdog_timer(void *param)
         lck_mtx_unlock(cb->lock);
     }
     lck_mtx_unlock(gConnectionBlockListLock);
+    
+    kn_debug("kn_deferred_packet_watchdog_timer returns\n");
     
     kn_register_deferred_packet_watchdog();
 }

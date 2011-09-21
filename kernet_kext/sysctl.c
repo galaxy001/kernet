@@ -168,7 +168,7 @@ int kn_sysctl_handler SYSCTL_HANDLER_ARGS {
         }
         
         else if (oidp == &sysctl__net_kernet_RST_timeout) {
-            if (IN_RANGE(CAST_PTR_INT(req->newptr), 0, 5000)) {   /* limit to 0ms ~ 5000ms */
+            if (IN_RANGE(CAST_PTR_INT(req->newptr), 0, 5000) == 0) {   /* limit to 0ms ~ 5000ms */
                 kn_mr_set_RST_timeout_safe(CAST_PTR_INT(req->newptr));
             }
             else {

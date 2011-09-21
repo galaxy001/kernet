@@ -1,0 +1,2 @@
+AF_SYSTEM = 32
+#define SYSPROTO_CONTROL       	2	/* kernel control protocol */
