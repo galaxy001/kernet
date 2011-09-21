@@ -129,7 +129,7 @@ int kn_sysctl_handler SYSCTL_HANDLER_ARGS {
         
         if (oidp == &sysctl__net_kernet_packet_delay_enabled) {
             if (CAST_PTR_INT(req->newptr) == 0 || CAST_PTR_INT(req->newptr) == 1) {
-                kn_mr_set_packet_delay_enabled(CAST_PTR_INT(req->newptr));
+                kn_mr_set_packet_delay_enabled_safe(CAST_PTR_INT(req->newptr));
             }
             else {
                 kn_debug("new value %d should only be either 0 or 1\n", CAST_PTR_INT(req->newptr));
@@ -139,7 +139,7 @@ int kn_sysctl_handler SYSCTL_HANDLER_ARGS {
         
         else if (oidp == &sysctl__net_kernet_fake_DNS_response_dropping_enabled) {
             if (CAST_PTR_INT(req->newptr) == 0 || CAST_PTR_INT(req->newptr) == 1) {
-                kn_mr_set_fake_DNS_response_dropping_enabled(CAST_PTR_INT(req->newptr));
+                kn_mr_set_fake_DNS_response_dropping_enabled_safe(CAST_PTR_INT(req->newptr));
             }
             else {
                 kn_debug("new value %d should only be either 0 or 1\n", CAST_PTR_INT(req->newptr));
@@ -149,7 +149,7 @@ int kn_sysctl_handler SYSCTL_HANDLER_ARGS {
         
         else if (oidp == &sysctl__net_kernet_injection_enabled) {
             if (CAST_PTR_INT(req->newptr) == 0 || CAST_PTR_INT(req->newptr) == 1) {
-                kn_mr_set_injection_enabled(CAST_PTR_INT(req->newptr));
+                kn_mr_set_injection_enabled_safe(CAST_PTR_INT(req->newptr));
             }
             else {
                 kn_debug("new value %d should only be either 0 or 1\n", CAST_PTR_INT(req->newptr));
@@ -159,7 +159,7 @@ int kn_sysctl_handler SYSCTL_HANDLER_ARGS {
         
         else if (oidp == &sysctl__net_kernet_RST_detection_enabled) {
             if (CAST_PTR_INT(req->newptr) == 0 || CAST_PTR_INT(req->newptr) == 1) {
-                kn_mr_set_RST_detection_enabled(CAST_PTR_INT(req->newptr));
+                kn_mr_set_RST_detection_enabled_safe(CAST_PTR_INT(req->newptr));
             }
             else {
                 kn_debug("new value %d should only be either 0 or 1\n", CAST_PTR_INT(req->newptr));
@@ -169,7 +169,7 @@ int kn_sysctl_handler SYSCTL_HANDLER_ARGS {
         
         else if (oidp == &sysctl__net_kernet_RST_timeout) {
             if (IN_RANGE(CAST_PTR_INT(req->newptr), 0, 5000)) {   /* limit to 0ms ~ 5000ms */
-                kn_mr_set_RST_timeout(CAST_PTR_INT(req->newptr));
+                kn_mr_set_RST_timeout_safe(CAST_PTR_INT(req->newptr));
             }
             else {
                 kn_debug("new value %d should only be either 0 or 5000\n", CAST_PTR_INT(req->newptr));
@@ -179,7 +179,7 @@ int kn_sysctl_handler SYSCTL_HANDLER_ARGS {
         
         else if (oidp == &sysctl__net_kernet_watchdog_enabled) {
             if (CAST_PTR_INT(req->newptr) == 0 || CAST_PTR_INT(req->newptr) == 1) {
-                kn_mr_set_watchdog_enabled(CAST_PTR_INT(req->newptr));
+                kn_mr_set_watchdog_enabled_safe(CAST_PTR_INT(req->newptr));
             }
             else {
                 kn_debug("new value %d should only be either 0 or 1\n", CAST_PTR_INT(req->newptr));
@@ -195,32 +195,32 @@ int kn_sysctl_handler SYSCTL_HANDLER_ARGS {
         /* Read request */
         
         if (oidp == &sysctl__net_kernet_packet_delay_enabled) {
-            out = kn_mr_packet_delay_enabled();
+            out = kn_mr_packet_delay_enabled_safe();
             error = SYSCTL_OUT(req, &out, sizeof out);
         }
         
         else if (oidp == &sysctl__net_kernet_injection_enabled) {
-            out = kn_mr_injection_enabled();
+            out = kn_mr_injection_enabled_safe();
             error = SYSCTL_OUT(req, &out, sizeof out);
         }
         
         else if (oidp == &sysctl__net_kernet_fake_DNS_response_dropping_enabled) {
-            out = kn_mr_fake_DNS_response_dropping_enabled();
+            out = kn_mr_fake_DNS_response_dropping_enabled_safe();
             error = SYSCTL_OUT(req, &out, sizeof out);
         }
         
         else if (oidp == &sysctl__net_kernet_watchdog_enabled) {
-            out = kn_mr_watchdog_enabled();
+            out = kn_mr_watchdog_enabled_safe();
             error = SYSCTL_OUT(req, &out, sizeof out);
         }
         
         else if (oidp == &sysctl__net_kernet_RST_detection_enabled) {
-            out = kn_mr_RST_detection_enabled();
+            out = kn_mr_RST_detection_enabled_safe();
             error = SYSCTL_OUT(req, &out, sizeof out);
         }
         
         else if (oidp == &sysctl__net_kernet_RST_timeout) {
-            out = kn_mr_RST_timeout();
+            out = kn_mr_RST_timeout_safe();
             error = SYSCTL_OUT(req, &out, sizeof out);
         }
         

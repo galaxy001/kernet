@@ -297,7 +297,7 @@ void kn_deferred_packet_watchdog_timer(void *param)
     int retval = 0;
     int timeout; 
     
-    timeout = kn_mr_RST_timeout();
+    timeout = kn_mr_RST_timeout_safe();
     
     microtime(&tv_now);
     
@@ -338,7 +338,7 @@ void kn_register_deferred_packet_watchdog()
     struct timespec ts;
     
     ts.tv_sec = 0;
-    ts.tv_nsec = 1000000 * kn_mr_RST_timeout();
+    ts.tv_nsec = 1000000 * kn_mr_RST_timeout_safe();
     
     bsd_timeout(kn_deferred_packet_watchdog_timer, NULL, &ts);
 }

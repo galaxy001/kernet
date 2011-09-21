@@ -85,7 +85,7 @@ errno_t kn_ip_input_fn (void *cookie, mbuf_t *data, int offset, u_int8_t protoco
 	len = mbuf_len(*data);
 	iph = (struct ip*) mbuf_data(*data);
 	
-	if (kn_mr_fake_DNS_response_dropping_enabled() && protocol == IPPROTO_UDP) {
+	if (kn_mr_fake_DNS_response_dropping_enabled_safe() && protocol == IPPROTO_UDP) {
 		if (len < (offset + sizeof(struct udphdr)))
 			return KERN_SUCCESS; // total packet length < sizeof(ip + udp)
 		
@@ -137,7 +137,7 @@ errno_t kn_ip_input_fn (void *cookie, mbuf_t *data, int offset, u_int8_t protoco
 		
 		tcph = (struct tcphdr*)((char*)iph + offset);
         
-        if (kn_mr_RST_detection_enabled() && (tcph->th_flags & TH_RST)) {
+        if (kn_mr_RST_detection_enabled_safe() && (tcph->th_flags & TH_RST)) {
             struct connection_block *cb = kn_find_connection_block_with_address_in_list(iph->ip_dst.s_addr, iph->ip_src.s_addr, tcph->th_dport, tcph->th_sport);
             if (cb) {
                 if (kn_cb_state(cb)) {
@@ -155,7 +155,7 @@ errno_t kn_ip_input_fn (void *cookie, mbuf_t *data, int offset, u_int8_t protoco
             }
         }
 		
-		if (kn_mr_injection_enabled() && (tcph->th_flags & TH_SYN)) { // flags & SYN 
+		if (kn_mr_injection_enabled_safe() && (tcph->th_flags & TH_SYN)) { // flags & SYN 
             struct connection_block *cb = kn_find_connection_block_with_address_in_list(iph->ip_dst.s_addr, iph->ip_src.s_addr, tcph->th_dport, tcph->th_sport);
             if (cb) {
                 retval = kn_inject_after_synack(*data);
@@ -254,7 +254,7 @@ errno_t kn_sflt_data_out_fn (void *cookie, socket_t so, const struct sockaddr *t
         return KERN_SUCCESS;
     }
     else {
-        if (kn_mr_packet_delay_enabled()) {
+        if (kn_mr_packet_delay_enabled_safe()) {
             kn_cb_add_deferred_packet(cb, *data, *control, flags, to);
             kn_debug("cb: %X added deferred packet\n", cb);
         }

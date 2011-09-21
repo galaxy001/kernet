@@ -2,7 +2,7 @@
 xcodebuild -arch x86_64
 cp -R /Users/ccp/Dropbox/src/kernet/build/Release/kernet.kext ./
 tar cf ./kernet.kext.tar kernet.kext
-scp kernet.kext.tar root@10.211.55.5:/var/root
+scp kernet.kext.tar root@ccp-vm.local:/var/root
 sudo cp -R ./kernet.kext /tmp
 
 rm -rf /var/root/kernet.kext
@@ -17,7 +17,7 @@ tcpdump -vv -i en0 'tcp[tcpflags] & tcp-rst != 0'
 gdb -arch x86_64 /Volumes/KernelDebugKit/mach_kernel
 source /Volumes/KernelDebugKit/kgmacros
 target remote-kdp
-kdp-reattach 10.211.55.5
+kdp-reattach ccp-vm.local
 showallkmods
 systemlog
 set kext-symbol-file-path /tmp
