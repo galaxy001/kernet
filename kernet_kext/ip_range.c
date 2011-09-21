@@ -58,9 +58,6 @@ void kn_fulfill_ip_ranges()
 	// Wikipedia
     kn_append_readable_ip_range_entry_default_ports("208.80.152.0", 22, ip_range_apply_kernet);
 	
-	// Pornhub
-	kn_append_ip_range_entry_default_ports(htonl(2454899747), 32, ip_range_apply_kernet); //	146.82.204.35/32
-	
 	// Just-Ping
 	kn_append_ip_range_entry_default_ports(htonl(1161540560), 32, ip_range_apply_kernet);	//	69.59.179.208/32
 	
@@ -77,6 +74,14 @@ void kn_fulfill_ip_ranges()
     // Kenengba.com
     kn_append_readable_ip_range_entry_default_ports("106.187.34.220", 32, ip_range_apply_kernet);
 
+    // liruqi.me
+    kn_append_readable_ip_range_entry_default_ports("74.207.250.143", 32, ip_range_apply_kernet);
+    
+    // apps.facebook.com
+    kn_append_readable_ip_range_entry_default_ports("69.63.181.68", 32, ip_range_apply_kernet);
+    
+    // blog.wenxuecity.com
+    kn_append_readable_ip_range_entry_default_ports("38.99.106.33", 24, ip_range_apply_kernet);
 }
 
 errno_t kn_ip_range_initialize()

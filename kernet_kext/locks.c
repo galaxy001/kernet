@@ -158,3 +158,16 @@ errno_t kn_free_locks()
     }
     return 0;
 }
+
+void kn_lock_shared_master_record() { 
+    lck_rw_lock_shared(gMasterRecordLock); 
+}
+void kn_unlock_shared_master_record() { 
+    lck_rw_unlock_shared(gMasterRecordLock); 
+}
+void kn_lock_exclusive_master_record() { 
+    lck_rw_lock_exclusive(gMasterRecordLock); 
+}
+void kn_unlock_exclusive_master_record() { 
+    lck_rw_unlock_exclusive(gMasterRecordLock); 
+}
