@@ -17,6 +17,7 @@ errno_t kn_inject_after_synack(mbuf_t incm_data);
 errno_t kn_inject_after_synack_strict(mbuf_t incm_data);
 errno_t kn_inject_after_synack_enhanced_1 (mbuf_t incm_data);
 errno_t kn_inject_after_synack_enhanced_2 (mbuf_t incm_data);
+errno_t kn_inject_after_synack_experiment (mbuf_t incm_data);
 
 errno_t kn_tcp_pkt_from_params(mbuf_t *data, u_int8_t tcph_flags, u_int32_t iph_saddr, u_int32_t iph_daddr, u_int16_t tcph_sport, u_int16_t tcph_dport, u_int32_t tcph_seq, u_int32_t tcph_ack, u_int16_t tcph_win, const char* payload, size_t payload_len);
 errno_t kn_inject_tcp_from_params(u_int8_t tcph_flags, u_int32_t iph_saddr, u_int32_t iph_daddr, u_int16_t tcph_sport, u_int16_t tcph_dport, u_int32_t tcph_seq, u_int32_t tcph_ack, u_int16_t tcph_win, const char* payload, size_t payload_len, packet_direction direction);

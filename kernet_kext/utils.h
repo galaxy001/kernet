@@ -31,6 +31,7 @@ char* kn_inet_ntoa_simple(u_int32_t ina);
 char* kn_inet_ntoa(u_int32_t ina, char* buf);
 int kn_inet_aton(const char *cp, u_int32_t *addr);
 void kn_debug(const char *fmt, ...);
+void kn_msleep(u_int32_t milliseconds, char *channel, char *msg);
 
 u_int16_t kn_tcp_sum_calc(u_int16_t len_tcp, u_int16_t src_addr[],u_int16_t dest_addr[], u_int16_t buff[]);
 u_int16_t kn_udp_sum_calc(u_int16_t len_udp, u_int16_t src_addr[],u_int16_t dest_addr[], u_int16_t buff[]);

@@ -37,10 +37,21 @@ lck_mtx_t *gDelayedInjectQueueLock = NULL;
 lck_rw_t *gipRangeListLock = NULL;
 lck_grp_t *gMutexGroup = NULL;
 lck_mtx_t *gConnectionBlockListLock = NULL;
+lck_grp_attr_t *gMutexGroupAttr = NULL;
+lck_attr_t *gGlobalLocksAttr = NULL;
+lck_attr_t *gConnectionBlockLocksAttr = NULL;
 
 errno_t kn_alloc_locks()
 {
 	errno_t			result = 0;
+    
+    gMutexGroupAttr = lck_grp_attr_alloc_init();
+    lck_grp_attr_setstat(gMutexGroupAttr);
+    
+    gGlobalLocksAttr = lck_attr_alloc_init();
+    gConnectionBlockLocksAttr = lck_attr_alloc_init();
+
+    kn_locks_enable_debug();
     
     result |= kn_alloc_mutex_group();
     result |= kn_alloc_master_record_lock();
@@ -50,12 +61,24 @@ errno_t kn_alloc_locks()
     return result;
 }
 
+void kn_locks_enable_debug()
+{
+    lck_attr_setdebug(gConnectionBlockLocksAttr);
+    lck_attr_setdebug(gGlobalLocksAttr);
+}
+
+void kn_locks_disable_debug()
+{
+    lck_attr_setdefault(gConnectionBlockLocksAttr);
+    lck_attr_setdefault(gGlobalLocksAttr);
+}
+
 errno_t kn_alloc_mutex_group()
 {
     errno_t			result = 0;
     assert(gMutexGroup == NULL);
 
-	gMutexGroup = lck_grp_alloc_init(KERNET_BUNDLEID, LCK_GRP_ATTR_NULL);
+	gMutexGroup = lck_grp_alloc_init(KERNET_BUNDLEID, gMutexGroupAttr);
 	if (gMutexGroup == NULL)
 	{
 		kn_debug("lck_grp_alloc_init returned error\n");
@@ -70,7 +93,7 @@ errno_t kn_alloc_master_record_lock()
     assert(gMutexGroup == NULL);
     assert(gMasterRecordLock == NULL);
     
-    gMasterRecordLock = lck_rw_alloc_init(gMutexGroup, LCK_ATTR_NULL);
+    gMasterRecordLock = lck_rw_alloc_init(gMutexGroup, gGlobalLocksAttr);
     if (gMasterRecordLock == NULL)
     {
         kn_debug("lck_mtx_alloc_init returned error\n");
@@ -85,7 +108,7 @@ errno_t kn_alloc_ip_range_list_lock()
     assert(gMutexGroup == NULL);
     assert(gipRangeListLock == NULL);
     
-    gipRangeListLock = lck_rw_alloc_init(gMutexGroup, LCK_ATTR_NULL);
+    gipRangeListLock = lck_rw_alloc_init(gMutexGroup, gGlobalLocksAttr);
     if (gipRangeListLock == NULL)
     {
         kn_debug("lck_mtx_alloc_init returned error\n");
@@ -100,7 +123,7 @@ errno_t kn_alloc_connection_block_list_lock()
     assert(gMutexGroup == NULL);
     assert(gConnectionBlockListLock == NULL);
     
-    gConnectionBlockListLock = lck_mtx_alloc_init(gMutexGroup, LCK_ATTR_NULL);
+    gConnectionBlockListLock = lck_mtx_alloc_init(gMutexGroup, gGlobalLocksAttr);
     if (gConnectionBlockListLock == NULL)
     {
         kn_debug("lck_mtx_alloc_init returned error\n");
@@ -156,5 +179,9 @@ errno_t kn_free_locks()
     if (gMutexGroup) {
         kn_free_mutex_group();
     }
+    
+    lck_grp_attr_free(gMutexGroupAttr);
+    lck_attr_free(gGlobalLocksAttr);
+    lck_attr_free(gConnectionBlockLocksAttr);
     return 0;
 }

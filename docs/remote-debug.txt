@@ -8,6 +8,7 @@ sudo cp -R ./kernet.kext /tmp
 rm -rf /var/root/kernet.kext
 tar xf /var/root/kernet.kext.tar
 cp -R /var/root/kernet.kext /tmp
+sysctl -w net.inet.tcp.win_scale_factor=1
 kextunload /tmp/kernet.kext
 kextload /tmp/kernet.kext
 

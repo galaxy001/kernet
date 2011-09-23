@@ -48,7 +48,7 @@ errno_t kn_mr_initialize()
     master_record.packet_delay_enabled = FALSE;
     master_record.fake_DNS_response_dropping_enabled = FALSE;
  
-    master_record.packet_delay_enabled_lock = lck_mtx_alloc_init(gMutexGroup, LCK_ATTR_NULL);
+    master_record.packet_delay_enabled_lock = lck_mtx_alloc_init(gMutexGroup, gGlobalLocksAttr);
 	if (master_record.packet_delay_enabled_lock == NULL)
 	{
 		kn_debug("lck_grp_alloc_init returned error\n");
@@ -56,35 +56,35 @@ errno_t kn_mr_initialize()
         return ret;
 	}
     
-    master_record.RST_timeout_lock = lck_mtx_alloc_init(gMutexGroup, LCK_ATTR_NULL);
+    master_record.RST_timeout_lock = lck_mtx_alloc_init(gMutexGroup, gGlobalLocksAttr);
 	if (master_record.RST_timeout_lock == NULL)
 	{
 		kn_debug("lck_grp_alloc_init returned error\n");
 		ret |= ENOMEM;
         return ret;
 	}
-    master_record.RST_detection_enabled_lock = lck_mtx_alloc_init(gMutexGroup, LCK_ATTR_NULL);
+    master_record.RST_detection_enabled_lock = lck_mtx_alloc_init(gMutexGroup, gGlobalLocksAttr);
 	if (master_record.RST_detection_enabled_lock == NULL)
 	{
 		kn_debug("lck_grp_alloc_init returned error\n");
 		ret |= ENOMEM;
         return ret;
 	}
-    master_record.watchdog_enabled_lock = lck_mtx_alloc_init(gMutexGroup, LCK_ATTR_NULL);
+    master_record.watchdog_enabled_lock = lck_mtx_alloc_init(gMutexGroup, gGlobalLocksAttr);
 	if (master_record.watchdog_enabled_lock == NULL)
 	{
 		kn_debug("lck_grp_alloc_init returned error\n");
 		ret |= ENOMEM;
         return ret;
 	}
-    master_record.fake_DNS_response_dropping_enabled_lock = lck_mtx_alloc_init(gMutexGroup, LCK_ATTR_NULL);
+    master_record.fake_DNS_response_dropping_enabled_lock = lck_mtx_alloc_init(gMutexGroup, gGlobalLocksAttr);
 	if (master_record.fake_DNS_response_dropping_enabled_lock == NULL)
 	{
 		kn_debug("lck_grp_alloc_init returned error\n");
 		ret |= ENOMEM;
         return ret;
 	}
-    master_record.injection_enabled_lock = lck_mtx_alloc_init(gMutexGroup, LCK_ATTR_NULL);
+    master_record.injection_enabled_lock = lck_mtx_alloc_init(gMutexGroup, gGlobalLocksAttr);
 	if (master_record.injection_enabled_lock == NULL)
 	{
 		kn_debug("lck_grp_alloc_init returned error\n");

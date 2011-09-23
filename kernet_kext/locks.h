@@ -13,6 +13,9 @@ extern lck_rw_t *gMasterRecordLock;
 extern lck_rw_t *gipRangeListLock;
 extern lck_grp_t *gMutexGroup;
 extern lck_mtx_t *gConnectionBlockListLock;
+extern lck_grp_attr_t *gMutexGroupAttr;
+extern lck_attr_t *gGlobalLocksAttr;
+extern lck_attr_t *gConnectionBlockLocksAttr;
 
 errno_t kn_alloc_locks();
 errno_t kn_free_locks();
@@ -31,5 +34,8 @@ inline void kn_lock_shared_master_record() { lck_rw_lock_shared(gMasterRecordLoc
 inline void kn_unlock_shared_master_record() { lck_rw_unlock_shared(gMasterRecordLock); };
 inline void kn_lock_exclusive_master_record() { lck_rw_lock_exclusive(gMasterRecordLock); };
 inline void kn_unlock_exclusive_master_record() { lck_rw_unlock_exclusive(gMasterRecordLock); };
+
+void kn_locks_enable_debug();
+void kn_locks_disable_debug();
 
 #endif

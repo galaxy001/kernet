@@ -233,7 +233,7 @@ errno_t kn_inject_after_synack_enhanced_1 (mbuf_t incm_data)
 	seq = htonl(ntohl(tcph->th_ack) - 1);
 	ack = tcph->th_seq;
 	
-	retval = kn_inject_tcp_from_params(TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0x0001U), NULL, 0, outgoing_direction);
+	retval = kn_inject_tcp_from_params(TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0xffffU), NULL, 0, outgoing_direction);
 	if (retval != 0) {
 		return retval;
 	}
@@ -250,7 +250,7 @@ errno_t kn_inject_after_synack_enhanced_1 (mbuf_t incm_data)
 	seq = tcph->th_ack;
 	ack = tcph->th_seq;
 	
-	retval = kn_inject_tcp_from_params(TH_ACK, saddr, daddr, sport, dport, seq, ack, htons(0x0001U), NULL, 0, outgoing_direction);
+	retval = kn_inject_tcp_from_params(TH_ACK, saddr, daddr, sport, dport, seq, ack, htons(0xffffU), NULL, 0, outgoing_direction);
 	if (retval != 0) {
 		return retval;
 	}
@@ -268,7 +268,7 @@ errno_t kn_inject_after_synack_enhanced_1 (mbuf_t incm_data)
 	seq = htonl(ntohl(tcph->th_ack) + 0);
 	ack = htonl(ntohl(tcph->th_seq) + 0);
 	
-	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0x0001U), NULL, 0, outgoing_direction);
+	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0xffffU), NULL, 0, outgoing_direction);
 	if (retval != 0) {
 		return retval;
 	}
@@ -286,11 +286,100 @@ errno_t kn_inject_after_synack_enhanced_1 (mbuf_t incm_data)
 	seq = htonl(ntohl(tcph->th_ack) + 2);
 	ack = htonl(ntohl(tcph->th_seq) + 2);
 	
-	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0x0001U), NULL, 0, outgoing_direction);
+	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0xffffU), NULL, 0, outgoing_direction);
 	if (retval != 0) {
 		return retval;
 	}
+    return KERN_SUCCESS;
+}
+
+errno_t kn_inject_after_synack_experiment (mbuf_t incm_data)
+{
+	errno_t retval = 0;
+	u_int32_t saddr;
+	u_int32_t daddr;
+	u_int16_t sport;
+	u_int16_t dport;
+	u_int32_t ack;
+	u_int32_t seq;
+	struct ip* iph;
+	struct tcphdr* tcph;
+	
+	iph = (struct ip*)mbuf_data(incm_data);
+	saddr = iph->ip_dst.s_addr;
+	daddr = iph->ip_src.s_addr;
+	
+	tcph = (struct tcphdr*)((char*)iph + iph->ip_hl * 4);
+	sport = tcph->th_dport;
+	dport = tcph->th_sport;
+	
+	/* 
+	 * first packet:
+	 * 
+	 * RST
+	 *
+	 * SEQ: SEQ in >>>SYN>>>, a.k.a. ACK in <<<SYN+ACK<<< -1
+	 * ACK: SEQ in <<<SYN+ACK<<<
+	 *
+	 */
+	
+	seq = htonl(ntohl(tcph->th_ack) - 1);
+	ack = tcph->th_seq;
+	
+//	retval = kn_inject_tcp_from_params(TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0xffffU), NULL, 0, outgoing_direction);
+	if (retval != 0) {
+		return retval;
+	}
+	
+	/* 
+	 * second packet:
+	 * 
+	 * ACK
+	 *
+	 * SEQ: ACK in <<<SYN+ACK<<<
+	 * ACK: SEQ in <<<SYN+ACK<<<
+	 *
+	 */
+	seq = tcph->th_ack;
+	ack = tcph->th_seq;
+	
+//	retval = kn_inject_tcp_from_params(TH_ACK, saddr, daddr, sport, dport, seq, ack, htons(0xffffU), NULL, 0, outgoing_direction);
+	if (retval != 0) {
+		return retval;
+	}
+	
+	/* 
+	 * third packet:
+	 * 
+	 * RST+ACK
+	 *
+	 * SEQ: ACK in <<<SYN+ACK<<<  
+	 * ACK: SEQ in <<<SYN+ACK<<< 
+	 *
+	 */
+	
+	seq = htonl(ntohl(tcph->th_ack) + 10000000);
+	ack = htonl(ntohl(tcph->th_seq) + 0);
+	
+	retval = kn_inject_tcp_from_params(TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0xffffU), NULL, 0, outgoing_direction);
     
+	/* 
+	 * fourth packet:
+	 * 
+	 * RST+ACK
+	 *
+	 * SEQ: ACK in <<<SYN+ACK<<<  + 2
+	 * ACK: SEQ in <<<SYN+ACK<<<  + 2
+	 *
+	 */
+	
+	seq = htonl(ntohl(tcph->th_ack) + 2);
+	ack = htonl(ntohl(tcph->th_seq) + 2);
+	
+//	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0xffffU), NULL, 0, outgoing_direction);
+	if (retval != 0) {
+		return retval;
+	}
     return KERN_SUCCESS;
 }
 
@@ -327,7 +416,7 @@ errno_t kn_inject_after_synack_enhanced_2 (mbuf_t incm_data)
 	seq = htonl(ntohl(tcph->th_ack) - 1);
 	ack = tcph->th_seq;
 	
-	retval = kn_inject_tcp_from_params(TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0x0001U), NULL, 0, outgoing_direction);
+	retval = kn_inject_tcp_from_params(TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0xffffU), NULL, 0, outgoing_direction);
 	if (retval != 0) {
 		return retval;
 	}
@@ -344,7 +433,7 @@ errno_t kn_inject_after_synack_enhanced_2 (mbuf_t incm_data)
 	seq = tcph->th_ack;
 	ack = tcph->th_seq;
 	
-	retval = kn_inject_tcp_from_params(TH_ACK, saddr, daddr, sport, dport, seq, ack, htons(0x0001U), NULL, 0, outgoing_direction);
+	retval = kn_inject_tcp_from_params(TH_ACK, saddr, daddr, sport, dport, seq, ack, htons(0xffffU), NULL, 0, outgoing_direction);
 	if (retval != 0) {
 		return retval;
 	}
@@ -362,7 +451,7 @@ errno_t kn_inject_after_synack_enhanced_2 (mbuf_t incm_data)
 	seq = htonl(ntohl(tcph->th_ack) + 0);
 	ack = htonl(ntohl(tcph->th_seq) + 0);
 	
-	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0x0001U), NULL, 0, outgoing_direction);
+	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0xffffU), NULL, 0, outgoing_direction);
 	if (retval != 0) {
 		return retval;
 	}
@@ -380,11 +469,21 @@ errno_t kn_inject_after_synack_enhanced_2 (mbuf_t incm_data)
 	seq = htonl(ntohl(tcph->th_ack) + 2);
 	ack = htonl(ntohl(tcph->th_seq) + 2);
 	
-	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0x0001U), NULL, 0, outgoing_direction);
+	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0xffffU), NULL, 0, outgoing_direction);
 	if (retval != 0) {
 		return retval;
 	}
-
+    
+	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0xffffU), NULL, 0, outgoing_direction);
+	if (retval != 0) {
+		return retval;
+	}	
+    
+    retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0xffffU), NULL, 0, outgoing_direction);
+	if (retval != 0) {
+		return retval;
+	}    
+    
     return KERN_SUCCESS;
 }
 
