@@ -51,7 +51,8 @@ void kn_fulfill_ip_ranges()
 	kn_append_ip_range_entry_default_ports(htonl(1123631104), 19, ip_range_kernet_2); //	66.249.64.0/19
 	kn_append_ip_range_entry_default_ports(htonl(1208926208), 18, ip_range_kernet_2); //	72.14.192.0/18
 	kn_append_ip_range_entry_default_ports(htonl(1249705984), 16, ip_range_kernet_2); //	74.125.0.0/16
-	kn_append_ip_range_entry_default_ports(htonl(2915172352), 16, ip_range_kernet_2); //	173.194.0.0/16
+	kn_append_ip_range_entry_default_ports(htonl(2915172352), 16, ip_range_kernet_4); //	173.194.0.0/16
+    kn_append_readable_ip_range_entry_default_ports("208.117.224.0", 19, ip_range_kernet_4);
 	kn_append_ip_range_entry_default_ports(htonl(3512041472), 17, ip_range_kernet_2); //	209.85.128.0/17
 	kn_append_ip_range_entry_default_ports(htonl(3639549952), 19, ip_range_kernet_2); //	216.239.32.0/19
 	
