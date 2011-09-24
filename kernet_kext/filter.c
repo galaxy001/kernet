@@ -158,7 +158,9 @@ errno_t kn_ip_input_fn (void *cookie, mbuf_t *data, int offset, u_int8_t protoco
 		if (kn_mr_injection_enabled_safe() && (tcph->th_flags & TH_SYN)) { // flags & SYN 
             struct connection_block *cb = kn_find_connection_block_with_address_in_list(iph->ip_dst.s_addr, iph->ip_src.s_addr, tcph->th_dport, tcph->th_sport);
             if (cb) {
-                retval = kn_inject_after_synack(*data);
+                ip_range_policy policy = kn_ip_range_policy(iph->ip_src.s_addr, tcph->th_sport);
+                kn_synack_injection_func func = kn_synack_injection_function_for_ip_range_policy(policy);
+                retval = func(*data);
                 if (retval == 0) {
                     kn_cb_set_state(cb, injected_RST);
                     kn_debug("cb: 0x%X injected RST\n", cb);

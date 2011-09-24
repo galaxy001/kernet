@@ -132,7 +132,7 @@ kern_return_t com_ccp0101_kext_kernet_stop (kmod_info_t * ki, void * d) {
     
     kn_mr_disable_all_services();
     
-    kn_msleep(1000, "kernet_shutdown", "kernet shutting down...");
+    kn_msleep(2000, "kernet_shutdown", "kernet shutting down...");
     
     retval = kn_connection_close();
     if (retval != 0)

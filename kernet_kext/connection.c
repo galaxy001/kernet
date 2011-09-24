@@ -149,6 +149,7 @@ void kn_reinject_all_deferred_packets_for_all()
     struct connection_block *b, *tmp;
     TAILQ_FOREACH_SAFE(b, &connection_block_list, link, tmp) {
         kn_cb_reinject_deferred_packets(b);
+        sflt_detach(b->socket, KERNET_HANDLE);
     }
     lck_mtx_unlock(gConnectionBlockListLock);
 }
