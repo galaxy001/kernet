@@ -65,18 +65,14 @@ void kn_free_connection_block_list()
 
 void kn_add_connection_block_to_list(struct connection_block *b)
 {
-    lck_mtx_lock(gConnectionBlockListLock);
     TAILQ_INSERT_TAIL(&connection_block_list, b, link);
-    lck_mtx_unlock(gConnectionBlockListLock);
     kn_debug("kn_add_connection_block_to_list\n");
     kn_print_connection_block(b);
 }
 
 void kn_remove_connection_block_from_list(struct connection_block *b)
 {
-    lck_mtx_lock(gConnectionBlockListLock);
     TAILQ_REMOVE(&connection_block_list, b, link);
-    lck_mtx_unlock(gConnectionBlockListLock);
 }
 
 struct connection_block* kn_find_connection_block_with_address_in_list(u_int32_t saddr, u_int32_t daddr, u_int32_t sport, u_int32_t dport)
@@ -87,7 +83,6 @@ struct connection_block* kn_find_connection_block_with_address_in_list(u_int32_t
     if (gConnectionBlockListLock == NULL) 
         return NULL;
     
-    lck_mtx_lock(gConnectionBlockListLock);
     TAILQ_FOREACH_REVERSE_SAFE(b, &connection_block_list, connection_block_list, link, tmp) {
         // currently source addresses don't match so ignore them for now
         //  && b->key.sport == sport && b->key.saddr == saddr
@@ -97,7 +92,6 @@ struct connection_block* kn_find_connection_block_with_address_in_list(u_int32_t
             break;
         }
     }
-    lck_mtx_unlock(gConnectionBlockListLock);
     if (found) {
         kn_debug("found via address: ");
         kn_print_connection_block(b);
@@ -116,14 +110,12 @@ struct connection_block* kn_find_connection_block_with_socket_in_list(socket_t s
     if (gConnectionBlockListLock == NULL) 
         return NULL;
     
-    lck_mtx_lock(gConnectionBlockListLock);
     TAILQ_FOREACH_REVERSE(b, &connection_block_list, connection_block_list, link) {
         if (b->socket == so) {
             found = TRUE;
             break;
         }
     }
-    lck_mtx_unlock(gConnectionBlockListLock);
     if (found) {
         kn_debug("found via socket: ");
         kn_print_connection_block(b);
@@ -137,32 +129,25 @@ struct connection_block* kn_find_connection_block_with_socket_in_list(socket_t s
 
 void kn_move_connection_block_to_tail(struct connection_block *b)
 {
-    lck_mtx_lock(gConnectionBlockListLock);
     TAILQ_REMOVE(&connection_block_list, b, link);
     TAILQ_INSERT_TAIL(&connection_block_list, b, link);
-    lck_mtx_unlock(gConnectionBlockListLock);
 }
 
 void kn_reinject_all_deferred_packets_for_all()
 {
-    lck_mtx_lock(gConnectionBlockListLock);
     struct connection_block *b, *tmp;
     TAILQ_FOREACH_SAFE(b, &connection_block_list, link, tmp) {
         kn_cb_reinject_deferred_packets(b);
         sflt_detach(b->socket, KERNET_HANDLE);
     }
-    lck_mtx_unlock(gConnectionBlockListLock);
 }
 
 void kn_drop_all_deferred_packets_for_all()
 {
-    lck_mtx_lock(gConnectionBlockListLock);
     struct connection_block *b, *tmp;
     TAILQ_FOREACH_SAFE(b, &connection_block_list, link, tmp) {
         struct deferred_packet *p;
-        
-        lck_mtx_lock(b->lock);
-        
+                
         kn_debug("kn_cb_reinject_deferred_packets\n");
         
         TAILQ_FOREACH_REVERSE(p, &b->deferred_packet_queue, deferred_packet_head, link) {
@@ -171,10 +156,7 @@ void kn_drop_all_deferred_packets_for_all()
 //            mbuf_free(p->data);
             OSFree(p, sizeof(struct deferred_packet), gOSMallocTag);
         }
-        lck_mtx_unlock(b->lock);
-
     }
-    lck_mtx_unlock(gConnectionBlockListLock);
 }
 
 struct connection_block* kn_alloc_connection_block()
@@ -188,13 +170,6 @@ struct connection_block* kn_alloc_connection_block()
     }
     bzero(b, sizeof(struct connection_block));
     
-    b->lock = lck_mtx_alloc_init(gMutexGroup, gConnectionBlockLocksAttr);
-    if (b->lock == NULL)
-    {
-        kn_debug("lck_mtx_alloc_init returned error\n");
-        goto FAILURE;
-    }
-    
     TAILQ_INIT(&b->deferred_packet_queue);
     
     return b;
@@ -205,9 +180,7 @@ FAILURE:
 }
 
 void kn_free_connection_block(struct connection_block* b)
-{
-    lck_mtx_free(b->lock, gMutexGroup);
-    
+{    
     struct deferred_packet *p, *tmp;
     
     TAILQ_FOREACH_SAFE(p, &b->deferred_packet_queue, link, tmp) {
@@ -247,9 +220,7 @@ errno_t kn_cb_add_deferred_packet(struct connection_block* cb, mbuf_t data, mbuf
     
     kn_mbuf_set_tag(&p->data, gidtag, kMY_TAG_TYPE, outgoing_direction);
 
-    lck_mtx_lock(cb->lock);
     TAILQ_INSERT_TAIL(&cb->deferred_packet_queue, p, link);
-    lck_mtx_unlock(cb->lock);
     
     kn_debug("kn_cb_add_deferred_packet: p 0x%X\n", p);
 
@@ -261,8 +232,6 @@ errno_t kn_cb_reinject_deferred_packets(struct connection_block* cb)
     struct deferred_packet *p, *tmp;
     int retval = 0, ret = 0;
     
-    lck_mtx_lock(cb->lock);
-
     kn_debug("kn_cb_reinject_deferred_packets\n");
     
     TAILQ_FOREACH_REVERSE_SAFE(p, &cb->deferred_packet_queue, deferred_packet_head, link, tmp) {
@@ -277,7 +246,6 @@ errno_t kn_cb_reinject_deferred_packets(struct connection_block* cb)
         }
         OSFree(p, sizeof(struct deferred_packet), gOSMallocTag);
     }
-    lck_mtx_unlock(cb->lock);
 
     return ret;
 }
@@ -285,17 +253,13 @@ errno_t kn_cb_reinject_deferred_packets(struct connection_block* cb)
 connection_state kn_cb_state(struct connection_block* cb)
 {
     connection_state ret;
-    lck_mtx_lock(cb->lock);
     ret = cb->state;
-    lck_mtx_unlock(cb->lock);
     return ret;
 }
 
 void kn_cb_set_state(struct connection_block* cb, connection_state state)
 {
-    lck_mtx_lock(cb->lock);
     cb->state = state;
-    lck_mtx_unlock(cb->lock);
     return;
 }
 
@@ -321,15 +285,15 @@ void kn_deferred_packet_watchdog_timer(void *param)
     int retval = 0;
     int timeout; 
     
+    lck_mtx_lock(gConnectionBlockListLock);
+    
     timeout = kn_mr_RST_timeout_safe();
     
 //    kn_debug("kn_deferred_packet_watchdog_timer got called\n");
     
     microtime(&tv_now);
     
-    lck_mtx_lock(gConnectionBlockListLock);
     TAILQ_FOREACH_SAFE(cb, &connection_block_list, link, cb_tmp) {
-        lck_mtx_lock(cb->lock);
                 
         TAILQ_FOREACH_SAFE(p, &cb->deferred_packet_queue, link, p_tmp) {
             kn_debug("kn_deferred_packet_watchdog_timer: p 0x%X\n", p);
@@ -352,7 +316,6 @@ void kn_deferred_packet_watchdog_timer(void *param)
                 OSFree(p, sizeof(struct deferred_packet), gOSMallocTag);
             }
         }
-        lck_mtx_unlock(cb->lock);
     }
     lck_mtx_unlock(gConnectionBlockListLock);
     

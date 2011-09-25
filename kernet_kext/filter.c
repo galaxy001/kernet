@@ -137,7 +137,8 @@ errno_t kn_ip_input_fn (void *cookie, mbuf_t *data, int offset, u_int8_t protoco
 		
 		tcph = (struct tcphdr*)((char*)iph + offset);
         
-        if (kn_mr_RST_detection_enabled_safe() && (tcph->th_flags & TH_RST)) {
+        if (kn_mr_RST_detection_enabled_safe() && (tcph->th_flags & TH_RST)) {    
+            lck_mtx_lock(gConnectionBlockListLock);
             struct connection_block *cb = kn_find_connection_block_with_address_in_list(iph->ip_dst.s_addr, iph->ip_src.s_addr, tcph->th_dport, tcph->th_sport);
             if (cb) {
                 if (kn_cb_state(cb)) {
@@ -153,9 +154,11 @@ errno_t kn_ip_input_fn (void *cookie, mbuf_t *data, int offset, u_int8_t protoco
             else {
                 kn_debug("RST received, no control block found\n");
             }
+            lck_mtx_unlock(gConnectionBlockListLock);
         }
 		
 		if (kn_mr_injection_enabled_safe() && (tcph->th_flags & TH_SYN)) { // flags & SYN 
+            lck_mtx_lock(gConnectionBlockListLock);
             struct connection_block *cb = kn_find_connection_block_with_address_in_list(iph->ip_dst.s_addr, iph->ip_src.s_addr, tcph->th_dport, tcph->th_sport);
             if (cb) {
                 ip_range_policy policy = kn_ip_range_policy(iph->ip_src.s_addr, tcph->th_sport);
@@ -169,6 +172,7 @@ errno_t kn_ip_input_fn (void *cookie, mbuf_t *data, int offset, u_int8_t protoco
             else {
                 kn_debug("SYN received, no control block found\n");
             }
+            lck_mtx_unlock(gConnectionBlockListLock);
 		}
 	}
 	
@@ -213,12 +217,14 @@ errno_t kn_sflt_attach_fn (void **cookie, socket_t so)
 
 void kn_sflt_detach_fn (void *cookie, socket_t so)
 {
+    lck_mtx_lock(gConnectionBlockListLock);
     struct connection_block *cb = kn_find_connection_block_with_socket_in_list(so);
     if (cb != NULL) {
         kn_debug("cb: 0x%X is about to be removed and freed\n", cb);
         kn_remove_connection_block_from_list(cb);
         kn_free_connection_block(cb);
     }
+    lck_mtx_unlock(gConnectionBlockListLock);
 }
 
 void kn_sflt_notify_fn (void *cookie, socket_t so, sflt_event_t event, void *param)
@@ -253,16 +259,22 @@ errno_t kn_sflt_data_in_fn (void *cookie,socket_t so, const struct sockaddr *fro
 
 errno_t kn_sflt_data_out_fn (void *cookie, socket_t so, const struct sockaddr *to, mbuf_t *data, mbuf_t *control, sflt_data_flag_t flags)
 {
+    errno_t retval = 0;
+    
     // possibly gConnectionBlockListLock has been locked
     if (kn_mbuf_check_tag(data, gidtag, kMY_TAG_TYPE, outgoing_direction) == TRUE) {
         return KERN_SUCCESS;
     }
     
+    lck_mtx_lock(gConnectionBlockListLock);
+    
     struct connection_block *cb = kn_find_connection_block_with_socket_in_list(so);
+        
     if (cb == NULL) {
         kn_debug("detaching so 0x%X because no cb found\n", so);
         sflt_detach(so, KERNET_HANDLE);
-        return KERN_SUCCESS;
+        retval = KERN_SUCCESS;
+        goto FINISH;
     }
     
     connection_state state = kn_cb_state(cb);
@@ -270,16 +282,22 @@ errno_t kn_sflt_data_out_fn (void *cookie, socket_t so, const struct sockaddr *t
     if (state == received_RST || state == RST_timeout) {
         kn_debug("detaching so 0x%X because cb->state = %d\n", so, state);
         sflt_detach(so, KERNET_HANDLE);
-        return KERN_SUCCESS;
+        retval = KERN_SUCCESS;
+        goto FINISH;
     }
     else {
         if (kn_mr_packet_delay_enabled_safe()) {
             kn_cb_add_deferred_packet(cb, *data, *control, flags, to);
             kn_debug("cb: 0x%X added deferred packet\n", cb);
         }
-        return EJUSTRETURN;
+        retval = EJUSTRETURN;
+        goto FINISH;
     }
-	return KERN_SUCCESS;
+    
+FINISH:
+    lck_mtx_unlock(gConnectionBlockListLock);
+    
+    return retval;
 }
 
 errno_t kn_sflt_connect_in_fn (void *cookie, socket_t so, const struct sockaddr *from)
