@@ -21,14 +21,6 @@ typedef enum _packet_direction {
     incoming_direction = 2,
 } packet_direction;
 
-
-struct control_block_t {						
-	kern_ctl_ref		ref;		// control reference to the connected process
-	u_int32_t			unit;		// unit number associated with the connected process
-	boolean_t			connected;
-    TAILQ_ENTRY(control_block)  link;
-};
-
 extern ipfilter_t kn_ipf_ref;
 extern mbuf_tag_id_t gidtag;
 extern kern_ctl_ref gctl_ref;

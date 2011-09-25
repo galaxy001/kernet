@@ -18,21 +18,15 @@
 
 #define READABLE_IPv4_LENGTH 4*sizeof"123"
 
-
-
 #define BUILD_FOR_DEBUGGING
-
 
 #define CTL_MAGIC_WORD 0x012A7715
 
 #define CTL_OPT_APPEND_IP_RANGE 0x10
 #define CTL_OPT_REMOVE_IP_RANGE 0x11
 
-#define IP_RANGE_POLICY_APPLY 0xA1
-#define IP_RANGE_POLICY_IGNORE 0xA2
-
 /* CTL general */
-#define E_OKAY 1
+#define E_OKAY 0
 #define E_PROGMA 9
 #define E_UNKNOWN_OPT 10
 /* CTL_OPT_APPEND_IP_RANGE : kn_append_ip_range_entry */
@@ -66,5 +60,14 @@ struct response_t {
     u_int8_t opt_code;
     u_int32_t status;
 };
+
+typedef enum _ip_range_policy {
+	ip_range_direct = 0, 
+    ip_range_kernet_1 = 1,
+    ip_range_kernet_2 = 2,
+    ip_range_kernet_3 = 3,
+    ip_range_kernet_4 = 4,
+    ip_range_kernet_experiment = 100,
+} ip_range_policy;
 
 #endif

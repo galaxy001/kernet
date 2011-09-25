@@ -9,16 +9,6 @@
 #ifndef IP_RANGE_H
 #define IP_RANGE_H
 
-
-typedef enum _ip_range_policy {
-	ip_range_direct = 1, 
-    ip_range_kernet_1,
-    ip_range_kernet_2,
-    ip_range_kernet_3,
-    ip_range_kernet_4,
-    ip_range_kernet_experiment,
-} ip_range_policy;
-
 struct ip_range_entry {
 	u_int32_t	ip;
 	u_int8_t	netmask_bits;
