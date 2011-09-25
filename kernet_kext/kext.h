@@ -25,6 +25,7 @@ extern ipfilter_t kn_ipf_ref;
 extern mbuf_tag_id_t gidtag;
 extern kern_ctl_ref gctl_ref;
 extern OSMallocTag gOSMallocTag;
+extern boolean_t gShuttingDown;
 
 extern struct ip_range_list ip_range_list;
 

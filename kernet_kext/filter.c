@@ -266,6 +266,10 @@ errno_t kn_sflt_data_out_fn (void *cookie, socket_t so, const struct sockaddr *t
         return KERN_SUCCESS;
     }
     
+    if (gShuttingDown == TRUE) {
+        return KERN_SUCCESS;
+    }
+    
     lck_mtx_lock(gConnectionBlockListLock);
     
     struct connection_block *cb = kn_find_connection_block_with_socket_in_list(so);
