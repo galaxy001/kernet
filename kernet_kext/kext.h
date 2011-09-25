@@ -21,13 +21,13 @@ typedef enum _packet_direction {
     incoming_direction = 2,
 } packet_direction;
 
-extern ipfilter_t kn_ipf_ref;
-extern mbuf_tag_id_t gidtag;
-extern kern_ctl_ref gctl_ref;
-extern OSMallocTag gOSMallocTag;
-extern boolean_t gShuttingDown;
+__private_extern__ ipfilter_t kn_ipf_ref;
+__private_extern__ mbuf_tag_id_t gidtag;
+__private_extern__ kern_ctl_ref gctl_ref;
+__private_extern__ OSMallocTag gOSMallocTag;
+__private_extern__ boolean_t gShuttingDown;
 
-extern struct ip_range_list ip_range_list;
+__private_extern__ struct ip_range_list ip_range_list;
 
 void kn_dirty_test();
 

@@ -40,7 +40,7 @@ struct connection_block {
 	TAILQ_ENTRY(connection_block) link;
 };
 
-extern struct connection_block_list connection_block_list;
+__private_extern__ struct connection_block_list connection_block_list;
 
 errno_t kn_connection_initialize();
 errno_t kn_connection_close();

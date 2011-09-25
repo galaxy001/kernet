@@ -24,7 +24,7 @@ struct gfw_domain {
     TAILQ_ENTRY(gfw_domain) link;
 };
 
-extern lck_rw_t gGFWDomainListLock;
+__private_extern__ lck_rw_t gGFWDomainListLock;
 
 void kn_dns_initialize();
 struct dns_packet* kn_dns_alloc_packet();
