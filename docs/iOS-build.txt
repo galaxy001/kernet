@@ -1,0 +1,66 @@
+export ARCH="armv7"
+export SDK_VERSION="5.0"
+export PLATFORM="iPhoneOS"
+export PROJECT_DIR="$PWD"
+export BUILD_DIR="$PWD/out"
+export DARWIN_SOURCE_DIR="/Users/ccp/Downloads/xnu-1699.22.73"
+
+export DEVROOT="/Developer/Platforms/${PLATFORM}.platform/Developer"
+export SDKROOT="/Developer/Platforms/${PLATFORM}.platform/Developer/SDKs/${PLATFORM}$SDK_VERSION.sdk"
+export LD=${DEVROOT}/usr/bin/ld
+export CPP=${DEVROOT}/usr/bin/cpp
+export CXX="${DEVROOT}/usr/bin/g++ -arch ${ARCH}"
+unset AR
+unset AS
+# export AR=${DEVROOT}/usr/bin/ar
+# export AS=${DEVROOT}/usr/bin/as
+export NM=${DEVROOT}/usr/bin/nm
+export CXXCPP=${DEVROOT}/usr/bin/cpp
+export RANLIB=${DEVROOT}/usr/bin/ranlib
+export CC="${DEVROOT}/usr/bin/gcc -arch ${ARCH}"
+export CFLAGS="-I${SDKROOT}/usr/include -pipe -no-cpp-precomp -isysroot ${SDKROOT}"
+export CXXFLAGS="${CFLAGS}"
+export LDFLAGS=" -pipe -no-cpp-precomp -L${SDKROOT}/usr/lib -L${DEVROOT}/usr/lib -isysroot ${SDKROOT} -Wl,-syslibroot $SDKROOT"
+
+export CFLAGS="${CFLAGS} -I/Users/ccp/toolchain/toolchain/sys/usr/include"
+
+
+# ProcessInfoPlistFile build/Release/kernet.kext/Contents/Info.plist kernet_kext/kernet-Info.plist
+
+cd ${PROJECT_DIR}
+mkdir -p ${BUILD_DIR}/kernet.kext/Contents/MacOS
+mkdir -p ${BUILD_DIR}/build/kernet.build/Release/kernet_kext.build/Objects-normal/${ARCH}
+plutil -convert binary1 kernet_kext/kernet-Info.plist -o ${BUILD_DIR}/kernet.kext/Contents/Info.plist
+# builtin-infoPlistUtility kernet_kext/kernet-Info.plist -expandbuildsettings -platform iphoneos -o ${BUILD_DIR}/kernet.kext/Contents/Info.plist
+
+# CompileC build/kernet.build/Release/kernet_kext.build/Objects-normal/${ARCH}/kext.o kernet_kext/kext.c normal ${ARCH} c com.apple.compilers.gcc.4_2
+cd ${PROJECT_DIR}
+${CC} ${CFLAGS} -x c -fmessage-length=0 -pipe -nostdinc -std=gnu99 -fno-builtin -Wno-trigraphs -Os -fno-common -mkernel -finline -fno-keep-inline-functions -Wreturn-type -Wunused-variable -Wshorten-64-to-32 -DKERNEL -DKERNEL_PRIVATE -DDRIVER_PRIVATE -DAPPLE -DNeXT -mmacosx-version-min=10.6 -gdwarf-2 -I${BUILD_DIR}/include -I/System/Library/Frameworks/Kernel.framework/PrivateHeaders -I/Developer/SDKs/MacOSX10.7.sdk/System/Library/Frameworks/Kernel.framework/Headers -F${BUILD_DIR} -DKERNET_KEXT -include ${PROJECT_DIR}/kernet_kext/kernet-Prefix.pch -c ${PROJECT_DIR}/kernet_kext/kext.c -o ${BUILD_DIR}/build/kernet.build/Release/kernet_kext.build/Objects-normal/${ARCH}/kext.o
+
+# CompileC build/kernet.build/Release/kernet_kext.build/Objects-normal/${ARCH}/control.o kernet_kext/control.c normal ${ARCH} c com.apple.compilers.gcc.4_2
+cd ${PROJECT_DIR}
+${CC} ${CFLAGS} -x c -fmessage-length=0 -pipe -nostdinc -std=gnu99 -fno-builtin -Wno-trigraphs -Os -fno-common -mkernel -finline -fno-keep-inline-functions -Wreturn-type -Wunused-variable -Wshorten-64-to-32 -DKERNEL -DKERNEL_PRIVATE -DDRIVER_PRIVATE -DAPPLE -DNeXT -mmacosx-version-min=10.6 -gdwarf-2 -I${BUILD_DIR}/include -I/System/Library/Frameworks/Kernel.framework/PrivateHeaders -I/Developer/SDKs/MacOSX10.7.sdk/System/Library/Frameworks/Kernel.framework/Headers -F${BUILD_DIR} -DKERNET_KEXT -include ${PROJECT_DIR}/kernet_kext/kernet-Prefix.pch -c ${PROJECT_DIR}/kernet_kext/control.c -o ${BUILD_DIR}/build/kernet.build/Release/kernet_kext.build/Objects-normal/${ARCH}/control.o
+
+CompileC build/kernet.build/Release/kernet_kext.build/Objects-normal/${ARCH}/manipulator.o kernet_kext/manipulator.c normal ${ARCH} c com.apple.compilers.gcc.4_2
+cd ${PROJECT_DIR}
+${CC} ${CFLAGS} -x c -fmessage-length=0 -pipe -nostdinc -std=gnu99 -fno-builtin -Wno-trigraphs -Os -fno-common -mkernel -finline -fno-keep-inline-functions -Wreturn-type -Wunused-variable -Wshorten-64-to-32 -DKERNEL -DKERNEL_PRIVATE -DDRIVER_PRIVATE -DAPPLE -DNeXT -mmacosx-version-min=10.6 -gdwarf-2 -I${BUILD_DIR}/include -I/System/Library/Frameworks/Kernel.framework/PrivateHeaders -I/Developer/SDKs/MacOSX10.7.sdk/System/Library/Frameworks/Kernel.framework/Headers -F${BUILD_DIR} -DKERNET_KEXT -include ${PROJECT_DIR}/kernet_kext/kernet-Prefix.pch -c ${PROJECT_DIR}/kernet_kext/manipulator.c -o ${BUILD_DIR}/build/kernet.build/Release/kernet_kext.build/Objects-normal/${ARCH}/manipulator.o
+
+# CompileC build/kernet.build/Release/kernet_kext.build/Objects-normal/${ARCH}/kernet_info.o build/kernet.build/Release/kernet_kext.build/DerivedSources/kernet_info.c normal ${ARCH} c com.apple.compilers.gcc.4_2
+cd ${PROJECT_DIR}
+${CC} ${CFLAGS} -x c -fmessage-length=0 -pipe -nostdinc -std=gnu99 -fno-builtin -Wno-trigraphs -Os -fno-common -mkernel -finline -fno-keep-inline-functions -Wreturn-type -Wunused-variable -Wshorten-64-to-32 -DKERNEL -DKERNEL_PRIVATE -DDRIVER_PRIVATE -DAPPLE -DNeXT -mmacosx-version-min=10.6 -gdwarf-2 -I${BUILD_DIR}/include -I/System/Library/Frameworks/Kernel.framework/PrivateHeaders -I/Developer/SDKs/MacOSX10.7.sdk/System/Library/Frameworks/Kernel.framework/Headers -F${BUILD_DIR} -DKERNET_KEXT -include ${PROJECT_DIR}/kernet_kext/kernet-Prefix.pch -c ${PROJECT_DIR}/kernet_kext/ios_supporting.c -o ${BUILD_DIR}/build/kernet.build/Release/kernet_kext.build/Objects-normal/${ARCH}/ios_supporting.o
+
+# Ld build/Release/kernet.kext/Contents/MacOS/kernet normal ${ARCH}
+cd ${PROJECT_DIR}
+${CC} ${LDFLAGS} -L${BUILD_DIR} -F${BUILD_DIR} -mmacosx-version-min=10.6 -Xlinker -kext -nostdlib ${BUILD_DIR}/build/kernet.build/Release/kernet_kext.build/Objects-normal/${ARCH}/control.o ${BUILD_DIR}/build/kernet.build/Release/kernet_kext.build/Objects-normal/${ARCH}/manipulator.o ${BUILD_DIR}/build/kernet.build/Release/kernet_kext.build/Objects-normal/${ARCH}/kext.o ${BUILD_DIR}/build/kernet.build/Release/kernet_kext.build/Objects-normal/${ARCH}/ios_supporting.o -lcc_kext -o ${BUILD_DIR}/kernet.kext/Contents/MacOS/kernet
+
+GenerateDSYMFile build/Release/kernet.kext.dSYM build/Release/kernet.kext/Contents/MacOS/kernet
+    cd ${PROJECT_DIR}
+    /Developer/usr/bin/dsymutil ${BUILD_DIR}/kernet.kext/Contents/MacOS/kernet -o ${BUILD_DIR}/kernet.kext.dSYM
+
+Touch build/Release/kernet.kext
+    cd ${PROJECT_DIR}
+    /usr/bin/touch -c ${BUILD_DIR}/kernet.kext
+
+
+** BUILD SUCCEEDED **
+

@@ -1,0 +1,30 @@
+ rm -rf kernet.kext
+xcodebuild -arch x86_64
+cp -R /Users/ccp/Dropbox/src/kernet/build/Release/kernet.kext ./
+tar cf ./kernet.kext.tar kernet.kext
+scp kernet.kext.tar root@ccp-vm.local:/var/root
+sudo cp -R ./kernet.kext /tmp
+
+rm -rf /var/root/kernet.kext
+tar xf /var/root/kernet.kext.tar
+cp -R /var/root/kernet.kext /tmp
+sysctl -w net.inet.tcp.win_scale_factor=1
+kextunload /tmp/kernet.kext
+kextload /tmp/kernet.kext
+
+tcpdump -vv -i en0 'tcp[tcpflags] & tcp-rst != 0'
+
+
+gdb -arch x86_64 /Volumes/KernelDebugKit/mach_kernel
+source /Volumes/KernelDebugKit/kgmacros
+target remote-kdp
+kdp-reattach ccp-vm.local
+showallkmods
+systemlog
+set kext-symbol-file-path /tmp
+add-kext /tmp/kernet.kext
+
+sudo kextutil -s /tmp -n -arch x86_64 -k /Volumes/KernelDebugKit/mach_kernel -e -r /Volumes/KernelDebugKit /tmp/kernet.kext
+
+
+0xffffff7f80caa000

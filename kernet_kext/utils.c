@@ -4,6 +4,7 @@
 #include "utils.h"
 #include "common.h"
 #include <sys/cdefs.h>
+#include <kern/clock.h>
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -23,6 +24,15 @@ char* kn_inet_ntoa(u_int32_t ina, char* buf) {
 	unsigned char *ucp = (unsigned char *)&ina;
 	snprintf(buf, READABLE_IPv4_LENGTH, "%d.%d.%d.%d", ucp[0] & 0xff, ucp[1] & 0xff, ucp[2] & 0xff, ucp[3] & 0xff);
     return buf;
+}
+
+void kn_msleep(u_int32_t milliseconds, char *channel, char *msg)
+{
+    struct timespec ts;    
+    ts.tv_sec = 0;
+    ts.tv_nsec = 1000000 * milliseconds;
+
+    msleep(channel, NULL, 0, msg, &ts);
 }
 
 /* It's stupid to look over how kernel handles checksuming. I'll implement my own. 

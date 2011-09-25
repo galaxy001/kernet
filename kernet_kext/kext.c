@@ -15,6 +15,7 @@
 #include <kern/locks.h>
 #include <kern/assert.h>
 #include <kern/debug.h>
+#include <kern/clock.h>
 
 #include <netinet/ip.h>
 #include <netinet/udp.h>
@@ -50,13 +51,18 @@ kern_return_t com_ccp0101_kext_kernet_start (kmod_info_t * ki, void * d) {
 	// it would indicate that the memory was pageable.
 	if (gOSMallocTag == NULL)
         goto WTF;	
-    
-    kn_mr_initialize();
-    
+        
     retval = kn_alloc_locks();
     if (retval != 0)
 	{
 		kn_debug("kn_alloc_locks returned error %d\n", retval);
+		goto WTF;
+	}
+        
+    retval = kn_mr_initialize();
+    if (retval != 0)
+	{
+		kn_debug("kn_mr_initialize returned error %d\n", retval);
 		goto WTF;
 	}
     
@@ -125,7 +131,9 @@ kern_return_t com_ccp0101_kext_kernet_stop (kmod_info_t * ki, void * d) {
 	int retval = 0;
     
     kn_mr_disable_all_services();
-        
+    
+    kn_msleep(2000, "kernet_shutdown", "kernet shutting down...");
+    
     retval = kn_connection_close();
     if (retval != 0)
 	{
@@ -133,17 +141,17 @@ kern_return_t com_ccp0101_kext_kernet_stop (kmod_info_t * ki, void * d) {
 		goto WTF;
 	}
     
-    retval = kn_ip_range_close();
-    if (retval != 0)
-	{
-		kn_debug("kn_ip_range_initialize returned error %d\n", retval);
-		goto WTF;
-	}
-    
     retval = kn_filters_close();
     if (retval != 0)
 	{
 		kn_debug("kn_filters_close returned error %d\n", retval);
+		goto WTF;
+	}
+    
+    retval = kn_ip_range_close();
+    if (retval != 0)
+	{
+		kn_debug("kn_ip_range_initialize returned error %d\n", retval);
 		goto WTF;
 	}
     
@@ -155,6 +163,13 @@ kern_return_t com_ccp0101_kext_kernet_stop (kmod_info_t * ki, void * d) {
 	}
     
     kn_unregister_sysctls();
+    
+    retval = kn_mr_close();
+    if (retval != 0)
+	{
+		kn_debug("kn_mr_close returned error %d\n", retval);
+		goto WTF;
+	}
     
     kn_free_locks();
     

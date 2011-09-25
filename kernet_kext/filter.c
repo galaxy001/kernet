@@ -85,7 +85,7 @@ errno_t kn_ip_input_fn (void *cookie, mbuf_t *data, int offset, u_int8_t protoco
 	len = mbuf_len(*data);
 	iph = (struct ip*) mbuf_data(*data);
 	
-	if (kn_mr_fake_DNS_response_dropping_enabled() && protocol == IPPROTO_UDP) {
+	if (kn_mr_fake_DNS_response_dropping_enabled_safe() && protocol == IPPROTO_UDP) {
 		if (len < (offset + sizeof(struct udphdr)))
 			return KERN_SUCCESS; // total packet length < sizeof(ip + udp)
 		
@@ -137,17 +137,17 @@ errno_t kn_ip_input_fn (void *cookie, mbuf_t *data, int offset, u_int8_t protoco
 		
 		tcph = (struct tcphdr*)((char*)iph + offset);
         
-        if (kn_mr_RST_detection_enabled() && (tcph->th_flags & TH_RST)) {
+        if (kn_mr_RST_detection_enabled_safe() && (tcph->th_flags & TH_RST)) {
             struct connection_block *cb = kn_find_connection_block_with_address_in_list(iph->ip_dst.s_addr, iph->ip_src.s_addr, tcph->th_dport, tcph->th_sport);
             if (cb) {
                 if (kn_cb_state(cb)) {
-                    kn_debug("cb: %X received RST\n", cb);
+                    kn_debug("cb: 0x%X received RST\n", cb);
                     kn_cb_set_state(cb, received_RST);
                     kn_cb_reinject_deferred_packets(cb);
                     sflt_detach(cb->socket, KERNET_HANDLE);
                 }
                 else {
-                    kn_debug("cb: %X received RST but state is not injected_RST\n", cb);
+                    kn_debug("cb: 0x%X received RST but state is not injected_RST\n", cb);
                 }
             }
             else {
@@ -155,13 +155,15 @@ errno_t kn_ip_input_fn (void *cookie, mbuf_t *data, int offset, u_int8_t protoco
             }
         }
 		
-		if (kn_mr_injection_enabled() && (tcph->th_flags & TH_SYN)) { // flags & SYN 
+		if (kn_mr_injection_enabled_safe() && (tcph->th_flags & TH_SYN)) { // flags & SYN 
             struct connection_block *cb = kn_find_connection_block_with_address_in_list(iph->ip_dst.s_addr, iph->ip_src.s_addr, tcph->th_dport, tcph->th_sport);
             if (cb) {
-                retval = kn_inject_after_synack(*data);
+                ip_range_policy policy = kn_ip_range_policy(iph->ip_src.s_addr, tcph->th_sport);
+                kn_synack_injection_func func = kn_synack_injection_function_for_ip_range_policy(policy);
+                retval = func(*data);
                 if (retval == 0) {
-                    kn_cb_set_state(cb, received_RST);
-                    kn_debug("cb: %X injected RST\n", cb);
+                    kn_cb_set_state(cb, injected_RST);
+                    kn_debug("cb: 0x%X injected RST\n", cb);
                 }
             }
             else {
@@ -213,7 +215,7 @@ void kn_sflt_detach_fn (void *cookie, socket_t so)
 {
     struct connection_block *cb = kn_find_connection_block_with_socket_in_list(so);
     if (cb != NULL) {
-        kn_debug("cb: %X is about to be removed and freed\n", cb);
+        kn_debug("cb: 0x%X is about to be removed and freed\n", cb);
         kn_remove_connection_block_from_list(cb);
         kn_free_connection_block(cb);
     }
@@ -225,6 +227,21 @@ void kn_sflt_notify_fn (void *cookie, socket_t so, sflt_event_t event, void *par
 		kn_debug("notified that so 0x%X has connected.\n", so);
 	}
     else if (event == sock_evt_disconnecting || event == sock_evt_shutdown || event == sock_evt_disconnected || event == sock_evt_closing) {
+        char *state = NULL;
+        switch (event) {
+            case sock_evt_disconnecting:
+                state = "sock_evt_disconnecting";
+                break;
+            case sock_evt_shutdown:
+                state = "sock_evt_shutdown";
+            case sock_evt_disconnected:
+                state = "sock_evt_disconnected";
+            case sock_evt_closing:
+                state = "sock_evt_closing";
+            default:
+                break;
+        }
+        kn_debug("detaching socket 0x%X for event %s\n", so, state);
         sflt_detach(so, KERNET_HANDLE);
     }
 }
@@ -243,6 +260,7 @@ errno_t kn_sflt_data_out_fn (void *cookie, socket_t so, const struct sockaddr *t
     
     struct connection_block *cb = kn_find_connection_block_with_socket_in_list(so);
     if (cb == NULL) {
+        kn_debug("detaching so 0x%X because no cb found\n", so);
         sflt_detach(so, KERNET_HANDLE);
         return KERN_SUCCESS;
     }
@@ -250,13 +268,14 @@ errno_t kn_sflt_data_out_fn (void *cookie, socket_t so, const struct sockaddr *t
     connection_state state = kn_cb_state(cb);
     
     if (state == received_RST || state == RST_timeout) {
+        kn_debug("detaching so 0x%X because cb->state = %d\n", so, state);
         sflt_detach(so, KERNET_HANDLE);
         return KERN_SUCCESS;
     }
     else {
-        if (kn_mr_packet_delay_enabled()) {
+        if (kn_mr_packet_delay_enabled_safe()) {
             kn_cb_add_deferred_packet(cb, *data, *control, flags, to);
-            kn_debug("cb: %X added deferred packet\n", cb);
+            kn_debug("cb: 0x%X added deferred packet\n", cb);
         }
         return EJUSTRETURN;
     }
@@ -265,6 +284,7 @@ errno_t kn_sflt_data_out_fn (void *cookie, socket_t so, const struct sockaddr *t
 
 errno_t kn_sflt_connect_in_fn (void *cookie, socket_t so, const struct sockaddr *from)
 {
+    kn_debug("detaching so 0x%X in connect_in_fn\n", so);
 	sflt_detach(so, KERNET_HANDLE);
 	return KERN_SUCCESS;
 }

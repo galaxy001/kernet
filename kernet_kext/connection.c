@@ -130,7 +130,7 @@ struct connection_block* kn_find_connection_block_with_socket_in_list(socket_t s
         return b;
     }
     else {
-        kn_debug("failed connection block for socket 0x%X\n", so);
+        kn_debug("failed to find connection block for socket 0x%X\n", so);
         return NULL;
     }
 }
@@ -149,6 +149,30 @@ void kn_reinject_all_deferred_packets_for_all()
     struct connection_block *b, *tmp;
     TAILQ_FOREACH_SAFE(b, &connection_block_list, link, tmp) {
         kn_cb_reinject_deferred_packets(b);
+        sflt_detach(b->socket, KERNET_HANDLE);
+    }
+    lck_mtx_unlock(gConnectionBlockListLock);
+}
+
+void kn_drop_all_deferred_packets_for_all()
+{
+    lck_mtx_lock(gConnectionBlockListLock);
+    struct connection_block *b, *tmp;
+    TAILQ_FOREACH_SAFE(b, &connection_block_list, link, tmp) {
+        struct deferred_packet *p;
+        
+        lck_mtx_lock(b->lock);
+        
+        kn_debug("kn_cb_reinject_deferred_packets\n");
+        
+        TAILQ_FOREACH_REVERSE(p, &b->deferred_packet_queue, deferred_packet_head, link) {
+            TAILQ_REMOVE(&b->deferred_packet_queue, p, link);
+//            mbuf_free(p->control);
+//            mbuf_free(p->data);
+            OSFree(p, sizeof(struct deferred_packet), gOSMallocTag);
+        }
+        lck_mtx_unlock(b->lock);
+
     }
     lck_mtx_unlock(gConnectionBlockListLock);
 }
@@ -164,7 +188,7 @@ struct connection_block* kn_alloc_connection_block()
     }
     bzero(b, sizeof(struct connection_block));
     
-    b->lock = lck_mtx_alloc_init(gMutexGroup, LCK_ATTR_NULL);
+    b->lock = lck_mtx_alloc_init(gMutexGroup, gConnectionBlockLocksAttr);
     if (b->lock == NULL)
     {
         kn_debug("lck_mtx_alloc_init returned error\n");
@@ -297,7 +321,9 @@ void kn_deferred_packet_watchdog_timer(void *param)
     int retval = 0;
     int timeout; 
     
-    timeout = kn_mr_RST_timeout();
+    timeout = kn_mr_RST_timeout_safe();
+    
+//    kn_debug("kn_deferred_packet_watchdog_timer got called\n");
     
     microtime(&tv_now);
     
@@ -330,6 +356,8 @@ void kn_deferred_packet_watchdog_timer(void *param)
     }
     lck_mtx_unlock(gConnectionBlockListLock);
     
+//    kn_debug("kn_deferred_packet_watchdog_timer returns\n");
+    
     kn_register_deferred_packet_watchdog();
 }
 
@@ -338,7 +366,7 @@ void kn_register_deferred_packet_watchdog()
     struct timespec ts;
     
     ts.tv_sec = 0;
-    ts.tv_nsec = 1000000 * kn_mr_RST_timeout();
+    ts.tv_nsec = 1000000 * kn_mr_RST_timeout_safe();
     
     bsd_timeout(kn_deferred_packet_watchdog_timer, NULL, &ts);
 }

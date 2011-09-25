@@ -32,6 +32,7 @@
 #include "kext.h"
 #include "locks.h"
 #include "utils.h"
+#include "ip_range.h"
 #include "manipulator.h"
 
 errno_t kn_prepend_mbuf_hdr(mbuf_t *data, size_t pkt_len)
@@ -127,9 +128,25 @@ errno_t	kn_mbuf_set_tag(mbuf_t *data, mbuf_tag_id_t id_tag, mbuf_tag_type_t tag_
 	return status;
 }
 
-errno_t kn_inject_after_synack(mbuf_t incm_data)
+kn_synack_injection_func kn_synack_injection_function_for_ip_range_policy(ip_range_policy policy)
 {
-    return kn_inject_after_synack_enhanced_2(incm_data);
+    switch (policy) {
+        case ip_range_direct:
+            return NULL;
+        case ip_range_kernet_1:
+            return kn_inject_after_synack_strict;
+        case ip_range_kernet_2:
+            return kn_inject_after_synack_1;
+        case ip_range_kernet_3:
+            return kn_inject_after_synack_2;
+        case ip_range_kernet_4:
+            return kn_inject_after_synack_3;
+        case ip_range_kernet_experiment:
+            return kn_inject_after_synack_experiment;
+        default:
+            break;
+    }
+    return NULL;
 }
 
 errno_t kn_inject_after_synack_strict(mbuf_t incm_data)
@@ -200,7 +217,7 @@ errno_t kn_inject_after_synack_strict(mbuf_t incm_data)
     return 0;
 }
 
-errno_t kn_inject_after_synack_enhanced_1 (mbuf_t incm_data)
+errno_t kn_inject_after_synack_experiment (mbuf_t incm_data)
 {
 	errno_t retval = 0;
 	u_int32_t saddr;
@@ -233,7 +250,7 @@ errno_t kn_inject_after_synack_enhanced_1 (mbuf_t incm_data)
 	seq = htonl(ntohl(tcph->th_ack) - 1);
 	ack = tcph->th_seq;
 	
-	retval = kn_inject_tcp_from_params(TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0x0001U), NULL, 0, outgoing_direction);
+//	retval = kn_inject_tcp_from_params(TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0xffffU), NULL, 0, outgoing_direction);
 	if (retval != 0) {
 		return retval;
 	}
@@ -250,7 +267,97 @@ errno_t kn_inject_after_synack_enhanced_1 (mbuf_t incm_data)
 	seq = tcph->th_ack;
 	ack = tcph->th_seq;
 	
-	retval = kn_inject_tcp_from_params(TH_ACK, saddr, daddr, sport, dport, seq, ack, htons(0x0001U), NULL, 0, outgoing_direction);
+//	retval = kn_inject_tcp_from_params(TH_ACK, saddr, daddr, sport, dport, seq, ack, htons(0xffffU), NULL, 0, outgoing_direction);
+	if (retval != 0) {
+		return retval;
+	}
+	
+	/* 
+	 * third packet:
+	 * 
+	 * RST+ACK
+	 *
+	 * SEQ: ACK in <<<SYN+ACK<<<  
+	 * ACK: SEQ in <<<SYN+ACK<<< 
+	 *
+	 */
+	
+	seq = htonl(ntohl(tcph->th_ack) + 10000000);
+	ack = htonl(ntohl(tcph->th_seq) + 0);
+	
+	retval = kn_inject_tcp_from_params(TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0xffffU), NULL, 0, outgoing_direction);
+    
+	/* 
+	 * fourth packet:
+	 * 
+	 * RST+ACK
+	 *
+	 * SEQ: ACK in <<<SYN+ACK<<<  + 2
+	 * ACK: SEQ in <<<SYN+ACK<<<  + 2
+	 *
+	 */
+	
+	seq = htonl(ntohl(tcph->th_ack) + 2);
+	ack = htonl(ntohl(tcph->th_seq) + 2);
+	
+//	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0xffffU), NULL, 0, outgoing_direction);
+	if (retval != 0) {
+		return retval;
+	}
+    return KERN_SUCCESS;
+}
+
+errno_t kn_inject_after_synack_1 (mbuf_t incm_data)
+{
+	errno_t retval = 0;
+	u_int32_t saddr;
+	u_int32_t daddr;
+	u_int16_t sport;
+	u_int16_t dport;
+	u_int32_t ack;
+	u_int32_t seq;
+	struct ip* iph;
+	struct tcphdr* tcph;
+	
+	iph = (struct ip*)mbuf_data(incm_data);
+	saddr = iph->ip_dst.s_addr;
+	daddr = iph->ip_src.s_addr;
+	
+	tcph = (struct tcphdr*)((char*)iph + iph->ip_hl * 4);
+	sport = tcph->th_dport;
+	dport = tcph->th_sport;
+	
+	/* 
+	 * first packet:
+	 * 
+	 * RST
+	 *
+	 * SEQ: SEQ in >>>SYN>>>, a.k.a. ACK in <<<SYN+ACK<<< -1
+	 * ACK: SEQ in <<<SYN+ACK<<<
+	 *
+	 */
+	
+	seq = htonl(ntohl(tcph->th_ack) - 1);
+	ack = tcph->th_seq;
+	
+	retval = kn_inject_tcp_from_params(TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0xffffU), NULL, 0, outgoing_direction);
+	if (retval != 0) {
+		return retval;
+	}
+	
+	/* 
+	 * second packet:
+	 * 
+	 * ACK
+	 *
+	 * SEQ: ACK in <<<SYN+ACK<<<
+	 * ACK: SEQ in <<<SYN+ACK<<<
+	 *
+	 */
+	seq = tcph->th_ack;
+	ack = tcph->th_seq;
+	
+	retval = kn_inject_tcp_from_params(TH_ACK, saddr, daddr, sport, dport, seq, ack, htons(0xffffU), NULL, 0, outgoing_direction);
 	if (retval != 0) {
 		return retval;
 	}
@@ -268,7 +375,7 @@ errno_t kn_inject_after_synack_enhanced_1 (mbuf_t incm_data)
 	seq = htonl(ntohl(tcph->th_ack) + 0);
 	ack = htonl(ntohl(tcph->th_seq) + 0);
 	
-	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0x0001U), NULL, 0, outgoing_direction);
+	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0xffffU), NULL, 0, outgoing_direction);
 	if (retval != 0) {
 		return retval;
 	}
@@ -286,15 +393,25 @@ errno_t kn_inject_after_synack_enhanced_1 (mbuf_t incm_data)
 	seq = htonl(ntohl(tcph->th_ack) + 2);
 	ack = htonl(ntohl(tcph->th_seq) + 2);
 	
-	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0x0001U), NULL, 0, outgoing_direction);
+	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0xffffU), NULL, 0, outgoing_direction);
 	if (retval != 0) {
 		return retval;
 	}
     
+	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0xffffU), NULL, 0, outgoing_direction);
+	if (retval != 0) {
+		return retval;
+	}	
+    
+    retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0xffffU), NULL, 0, outgoing_direction);
+	if (retval != 0) {
+		return retval;
+	}    
+    
     return KERN_SUCCESS;
 }
 
-errno_t kn_inject_after_synack_enhanced_2 (mbuf_t incm_data)
+errno_t kn_inject_after_synack_2 (mbuf_t incm_data)
 {
 	errno_t retval = 0;
 	u_int32_t saddr;
@@ -314,77 +431,61 @@ errno_t kn_inject_after_synack_enhanced_2 (mbuf_t incm_data)
 	sport = tcph->th_dport;
 	dport = tcph->th_sport;
 	
-	/* 
-	 * first packet:
-	 * 
-	 * RST
-	 *
-	 * SEQ: SEQ in >>>SYN>>>, a.k.a. ACK in <<<SYN+ACK<<< -1
-	 * ACK: SEQ in <<<SYN+ACK<<<
-	 *
-	 */
-	
-	seq = htonl(ntohl(tcph->th_ack) - 1);
+	seq = htonl(ntohl(tcph->th_ack) + 1);
 	ack = tcph->th_seq;
 	
-	retval = kn_inject_tcp_from_params(TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0x0001U), NULL, 0, outgoing_direction);
+	retval = kn_inject_tcp_from_params(TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0xffffU), NULL, 0, outgoing_direction);
 	if (retval != 0) {
 		return retval;
 	}
-	
-	/* 
-	 * second packet:
-	 * 
-	 * ACK
-	 *
-	 * SEQ: ACK in <<<SYN+ACK<<<
-	 * ACK: SEQ in <<<SYN+ACK<<<
-	 *
-	 */
-	seq = tcph->th_ack;
-	ack = tcph->th_seq;
-	
-	retval = kn_inject_tcp_from_params(TH_ACK, saddr, daddr, sport, dport, seq, ack, htons(0x0001U), NULL, 0, outgoing_direction);
-	if (retval != 0) {
-		return retval;
-	}
-	
-	/* 
-	 * third packet:
-	 * 
-	 * RST+ACK
-	 *
-	 * SEQ: ACK in <<<SYN+ACK<<<  
-	 * ACK: SEQ in <<<SYN+ACK<<< 
-	 *
-	 */
-	
-	seq = htonl(ntohl(tcph->th_ack) + 0);
-	ack = htonl(ntohl(tcph->th_seq) + 0);
-	
-	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0x0001U), NULL, 0, outgoing_direction);
-	if (retval != 0) {
-		return retval;
-	}
-	
-	/* 
-	 * fourth packet:
-	 * 
-	 * RST+ACK
-	 *
-	 * SEQ: ACK in <<<SYN+ACK<<<  + 2
-	 * ACK: SEQ in <<<SYN+ACK<<<  + 2
-	 *
-	 */
-	
-	seq = htonl(ntohl(tcph->th_ack) + 2);
-	ack = htonl(ntohl(tcph->th_seq) + 2);
-	
-	retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0x0001U), NULL, 0, outgoing_direction);
-	if (retval != 0) {
-		return retval;
-	}
+        
+    return KERN_SUCCESS;
+}
 
+errno_t kn_inject_after_synack_3 (mbuf_t incm_data)
+{
+	errno_t retval = 0;
+	u_int32_t saddr;
+	u_int32_t daddr;
+	u_int16_t sport;
+	u_int16_t dport;
+	u_int32_t ack;
+	u_int32_t seq;
+	struct ip* iph;
+	struct tcphdr* tcph;
+	
+	iph = (struct ip*)mbuf_data(incm_data);
+	saddr = iph->ip_dst.s_addr;
+	daddr = iph->ip_src.s_addr;
+	
+	tcph = (struct tcphdr*)((char*)iph + iph->ip_hl * 4);
+	sport = tcph->th_dport;
+	dport = tcph->th_sport;
+    
+	seq = htonl(ntohl(tcph->th_ack));
+	ack = tcph->th_seq;
+	
+    mbuf_t pkt; 
+    
+    retval = kn_tcp_pkt_from_params(&pkt, TH_RST, saddr, daddr, sport, dport, seq, ack, htons(0xffffU), NULL, 0);
+    if (retval != 0) {
+        kn_debug("kn_tcp_pkt_from_params returned error %d\n", retval);
+        return retval;
+    }
+    
+    kn_set_ip_ttl(&pkt, 10);
+    
+    retval = kn_mbuf_set_tag(&pkt, gidtag, kMY_TAG_TYPE, outgoing_direction);
+    if (retval != 0) {
+        kn_debug("kn_mbuf_set_tag returned error %d\n", retval);
+        return retval;
+    }
+    
+    retval = ipf_inject_output(pkt, kn_ipf_ref, NULL);
+    if (retval != 0) {
+		return retval;
+	}
+    
     return KERN_SUCCESS;
 }
 
@@ -541,4 +642,11 @@ errno_t kn_inject_tcp_from_params(u_int8_t tcph_flags, u_int32_t iph_saddr, u_in
     
     return 0;
 	
+}
+
+errno_t kn_set_ip_ttl(mbuf_t *data, u_int8_t ttl) {
+	struct ip* iph;
+	iph = (struct ip*)mbuf_data(*data);
+	iph->ip_ttl = ttl;
+    return 0;
 }

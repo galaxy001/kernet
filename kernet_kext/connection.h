@@ -54,6 +54,7 @@ void kn_remove_connection_block_from_list(struct connection_block *b);
 void kn_add_connection_block_to_list(struct connection_block *b);
 void kn_move_connection_block_to_tail(struct connection_block *b);
 void kn_reinject_all_deferred_packets_for_all();
+void kn_drop_all_deferred_packets_for_all();
 
 void kn_print_connection_block(struct connection_block* b);
 struct connection_block* kn_alloc_connection_block();
