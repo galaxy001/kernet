@@ -241,7 +241,9 @@ void kn_mr_set_packet_delay_enabled(boolean_t enabled)
         master_record.packet_delay_enabled = enabled;
         if (enabled == FALSE) {
             /* reinject any swallowed packet beforing disabling it */
+            lck_mtx_lock(gConnectionBlockListLock);
             kn_reinject_all_deferred_packets_for_all();
+            lck_mtx_unlock(gConnectionBlockListLock);
         }
     }
 END:

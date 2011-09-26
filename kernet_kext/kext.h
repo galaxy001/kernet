@@ -21,20 +21,13 @@ typedef enum _packet_direction {
     incoming_direction = 2,
 } packet_direction;
 
+__private_extern__ ipfilter_t kn_ipf_ref;
+__private_extern__ mbuf_tag_id_t gidtag;
+__private_extern__ kern_ctl_ref gctl_ref;
+__private_extern__ OSMallocTag gOSMallocTag;
+__private_extern__ boolean_t gShuttingDown;
 
-struct control_block_t {						
-	kern_ctl_ref		ref;		// control reference to the connected process
-	u_int32_t			unit;		// unit number associated with the connected process
-	boolean_t			connected;
-    TAILQ_ENTRY(control_block)  link;
-};
-
-extern ipfilter_t kn_ipf_ref;
-extern mbuf_tag_id_t gidtag;
-extern kern_ctl_ref gctl_ref;
-extern OSMallocTag gOSMallocTag;
-
-extern struct ip_range_list ip_range_list;
+__private_extern__ struct ip_range_list ip_range_list;
 
 void kn_dirty_test();
 

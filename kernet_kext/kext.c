@@ -42,6 +42,7 @@
 
 OSMallocTag		gOSMallocTag;
 mbuf_tag_id_t	gidtag;
+boolean_t gShuttingDown = FALSE;
 
 kern_return_t com_ccp0101_kext_kernet_start (kmod_info_t * ki, void * d) {
 	
@@ -129,6 +130,8 @@ WTF:
 kern_return_t com_ccp0101_kext_kernet_stop (kmod_info_t * ki, void * d) {
 	
 	int retval = 0;
+    
+    gShuttingDown = TRUE;
     
     kn_mr_disable_all_services();
     

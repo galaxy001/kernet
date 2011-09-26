@@ -27,7 +27,7 @@ struct master_record_t {
     lck_mtx_t *RST_timeout_lock;
 };
 
-extern struct master_record_t master_record;
+__private_extern__ struct master_record_t master_record;
 
 errno_t kn_mr_initialize();
 errno_t kn_mr_close();

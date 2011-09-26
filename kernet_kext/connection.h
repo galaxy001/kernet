@@ -35,13 +35,12 @@ struct deferred_packet {
 struct connection_block {
     struct connection_key key;
     socket_t socket;
-    lck_mtx_t *lock;
     connection_state state;
     TAILQ_HEAD(deferred_packet_head, deferred_packet) deferred_packet_queue;
 	TAILQ_ENTRY(connection_block) link;
 };
 
-extern struct connection_block_list connection_block_list;
+__private_extern__ struct connection_block_list connection_block_list;
 
 errno_t kn_connection_initialize();
 errno_t kn_connection_close();

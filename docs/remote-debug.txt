@@ -1,4 +1,4 @@
- rm -rf kernet.kext
+rm -rf kernet.kext
 xcodebuild -arch x86_64
 cp -R /Users/ccp/Dropbox/src/kernet/build/Release/kernet.kext ./
 tar cf ./kernet.kext.tar kernet.kext
@@ -28,3 +28,9 @@ sudo kextutil -s /tmp -n -arch x86_64 -k /Volumes/KernelDebugKit/mach_kernel -e 
 
 
 0xffffff7f80caa000
+
+
+xcodebuild -arch x86_64 -target kernetcli
+scp /Users/ccp/Dropbox/src/kernet/build/Release/kernetcli root@ccp-vm.local:/var/root
+
+

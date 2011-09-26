@@ -9,13 +9,13 @@
 #ifndef LOCKS_H
 #define LOCKS_H
 
-extern lck_rw_t *gMasterRecordLock;
-extern lck_rw_t *gipRangeListLock;
-extern lck_grp_t *gMutexGroup;
-extern lck_mtx_t *gConnectionBlockListLock;
-extern lck_grp_attr_t *gMutexGroupAttr;
-extern lck_attr_t *gGlobalLocksAttr;
-extern lck_attr_t *gConnectionBlockLocksAttr;
+__private_extern__ lck_rw_t *gMasterRecordLock;
+__private_extern__ lck_rw_t *gipRangeListLock;
+__private_extern__ lck_grp_t *gMutexGroup;
+__private_extern__ lck_mtx_t *gConnectionBlockListLock;
+__private_extern__ lck_grp_attr_t *gMutexGroupAttr;
+__private_extern__ lck_attr_t *gGlobalLocksAttr;
+__private_extern__ lck_attr_t *gConnectionBlockLocksAttr;
 
 errno_t kn_alloc_locks();
 errno_t kn_free_locks();
