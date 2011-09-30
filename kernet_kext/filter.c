@@ -163,10 +163,12 @@ errno_t kn_ip_input_fn (void *cookie, mbuf_t *data, int offset, u_int8_t protoco
             if (cb) {
                 ip_range_policy policy = kn_ip_range_policy(iph->ip_src.s_addr, tcph->th_sport);
                 kn_synack_injection_func func = kn_synack_injection_function_for_ip_range_policy(policy);
-                retval = func(*data);
-                if (retval == 0) {
-                    kn_cb_set_state(cb, injected_RST);
-                    kn_debug("cb: 0x%X injected RST\n", cb);
+                if (func) {
+                    retval = func(*data);
+                    if (retval == 0) {
+                        kn_cb_set_state(cb, injected_RST);
+                        kn_debug("cb: 0x%X injected RST\n", cb);
+                    }
                 }
             }
             else {
