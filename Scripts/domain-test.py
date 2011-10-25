@@ -18,7 +18,7 @@ for d in domains:
             reset.write(d+"\n")
             reset.flush()
             continue
-        if err.find("timeout") >= 0:
+        if err.find("timed out") >= 0:
             timeout.write(d+"\n")
             timeout.flush()
             continue
