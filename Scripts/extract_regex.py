@@ -87,7 +87,15 @@ def printList(list):
     line_ctr = 0
     for line in list:
         line_ctr = line_ctr + 1
-        print str(line_ctr) + "\t" + line
+        line = string.replace(line, '\.', '.')
+        line = string.replace(line, '\-', '-')
+        if (line.find('?') != -1):
+            line = line.rsplit('?')[-1]
+        if (line.find('.') == -1):
+            continue 
+        if (line.find('\\') != -1):
+            continue
+        print line
         
 def main():
     #    fetchedList = fetchRules()
