@@ -17,6 +17,8 @@
 		741248D3130E058500715730 /* common.h in Headers */ = {isa = PBXBuildFile; fileRef = 741248A2130E036B00715730 /* common.h */; };
 		74DAA0AC13125DFB00BE59FD /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 74DAA0AB13125DFB00BE59FD /* main.c */; };
 		74DAA0B21312689400BE59FD /* libpcre.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 74DAA0B11312689400BE59FD /* libpcre.dylib */; };
+		F4A9C5341456EBFB00324A58 /* utils.c in Sources */ = {isa = PBXBuildFile; fileRef = F4A9C5321456EBFB00324A58 /* utils.c */; };
+		F4A9C5351456EBFB00324A58 /* utils.h in Headers */ = {isa = PBXBuildFile; fileRef = F4A9C5331456EBFB00324A58 /* utils.h */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -55,6 +57,8 @@
 		74DAA0A813125DFB00BE59FD /* kerdns */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = kerdns; sourceTree = BUILT_PRODUCTS_DIR; };
 		74DAA0AB13125DFB00BE59FD /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
 		74DAA0B11312689400BE59FD /* libpcre.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libpcre.dylib; path = SDKs/MacOSX10.6.sdk/usr/lib/libpcre.dylib; sourceTree = DEVELOPER_DIR; };
+		F4A9C5321456EBFB00324A58 /* utils.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = utils.c; path = kernet_kext/utils.c; sourceTree = SOURCE_ROOT; };
+		F4A9C5331456EBFB00324A58 /* utils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = utils.h; path = kernet_kext/utils.h; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -112,6 +116,8 @@
 		74124895130E033600715730 /* kernet_kext */ = {
 			isa = PBXGroup;
 			children = (
+				F4A9C5321456EBFB00324A58 /* utils.c */,
+				F4A9C5331456EBFB00324A58 /* utils.h */,
 				741248B4130E037B00715730 /* Supporting files */,
 				741248A2130E036B00715730 /* common.h */,
 				741248A3130E036B00715730 /* control.c */,
@@ -170,6 +176,7 @@
 				741248AC130E036B00715730 /* common.h in Headers */,
 				741248B0130E036B00715730 /* kernet-Prefix.pch in Headers */,
 				741248B2130E036B00715730 /* kext.h in Headers */,
+				F4A9C5351456EBFB00324A58 /* utils.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -290,6 +297,7 @@
 				741248AD130E036B00715730 /* control.c in Sources */,
 				741248B1130E036B00715730 /* kext.c in Sources */,
 				741248B3130E036B00715730 /* manipulator.c in Sources */,
+				F4A9C5341456EBFB00324A58 /* utils.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -504,6 +512,7 @@
 				74DAA0B013125DFB00BE59FD /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

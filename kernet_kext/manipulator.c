@@ -31,134 +31,7 @@
 #include <sys/queue.h>
 
 #include "kext.h"
-
-/* data_offset = offset of the fragmented second packet without IP header counted in */
-/* not functioning ! */
-static errno_t kn_fragment_pkt_to_two_pieces(mbuf_t orgn_pkt, mbuf_t *pkt1, mbuf_t *pkt2, u_int16_t data_offset)
-{
-    struct ip* iph;
-    u_int16_t tot_len;
-    u_int16_t pkt1_len;
-    u_int16_t pkt2_len;
-    boolean_t pkt1_allocated = FALSE;
-    boolean_t pkt2_allocated = FALSE;
-    errno_t retval = 0;
-    char *pkt1_buf, *pkt2_buf, *orgn_buf;
-    mbuf_csum_request_flags_t csum_flags = 0;
-    int orgn_ip_hl = iph->ip_hl * 4;
-    u_int16_t ip_id = 0x2912;
-    
-    if (data_offset % 8 != 0) {
-        kn_debug("data_offset % 8 != 0\n");
-        goto FAILURE;
-    }
-    
-    iph = (struct ip*)mbuf_data(orgn_pkt);
-    tot_len = ntohs(iph->ip_len);
-    pkt1_len = orgn_ip_hl + data_offset;
-    pkt2_len = tot_len - orgn_ip_hl - data_offset + sizeof(struct ip);
-    
-    if (data_offset < tot_len - orgn_ip_hl) {
-        kn_debug("unable to fragment a packet because offset too small\n");
-        goto FAILURE;
-    }
-    retval = mbuf_allocpacket(MBUF_DONTWAIT, pkt1_len, NULL, pkt1);
-	if (retval != 0) {
-		kn_debug("mbuf_allocpacket returned error %d\n", retval);
-		goto FAILURE;
-	}
-    else {
-        pkt1_allocated = TRUE;
-    }
-    
-    retval = mbuf_allocpacket(MBUF_DONTWAIT, pkt2_len, NULL, pkt2);
-	if (retval != 0) {
-		kn_debug("mbuf_allocpacket returned error %d\n", retval);
-		goto FAILURE;
-	}
-    else {
-        pkt2_allocated = TRUE;
-    }
-	
-	mbuf_pkthdr_setlen(*pkt1, pkt1_len);
-	retval = mbuf_pkthdr_setrcvif(*pkt1, NULL);
-	if (retval != 0) {
-		kn_debug("mbuf_pkthdr_setrcvif returned error %d\n", retval);
-        goto FAILURE;
-	}
-	
-	mbuf_setlen(*pkt1, pkt1_len);
-	
-	retval = mbuf_setdata(*pkt1, (mbuf_datastart(*pkt1)), pkt1_len);
-	if (retval != 0) {
-		kn_debug("mbuf_setdata returned error %d\n", retval);
-        goto FAILURE;
-	}
-	
-    mbuf_pkthdr_setheader(*pkt1, mbuf_data(*pkt1));
-    
-    mbuf_pkthdr_setlen(*pkt2, pkt2_len);
-	retval = mbuf_pkthdr_setrcvif(*pkt2, NULL);
-	if (retval != 0) {
-		kn_debug("mbuf_pkthdr_setrcvif returned error %d\n", retval);
-        goto FAILURE;
-	}
-	
-	mbuf_setlen(*pkt2, pkt2_len);
-	
-	retval = mbuf_setdata(*pkt2, (mbuf_datastart(*pkt2)), pkt2_len);
-	if (retval != 0) {
-		kn_debug("mbuf_setdata returned error %d\n", retval);
-        goto FAILURE;
-	}
-	
-    mbuf_pkthdr_setheader(*pkt2, mbuf_data(*pkt2));
-    
-    pkt1_buf = mbuf_data(*pkt1);
-    pkt2_buf = mbuf_data(*pkt2);
-    memcpy(pkt1_buf, orgn_buf, data_offset + orgn_ip_hl);
-    memcpy(pkt2_buf, orgn_buf, sizeof(struct ip));
-    memcpy(pkt2_buf + sizeof(struct ip), orgn_buf + orgn_ip_hl + data_offset, pkt2_len - sizeof(struct ip));
-    
-    iph = (struct ip*)pkt1_buf;
-    iph->ip_off = 0;
-    iph->ip_off = iph->ip_off | IP_MF;
-    iph->ip_len = htons(pkt1_len);
-    iph->ip_id  = htons(ip_id);
-    
-    mbuf_clear_csum_performed(*pkt1);
-	
-	csum_flags |= MBUF_CSUM_REQ_IP;
-	retval = mbuf_get_csum_requested(*pkt1, &csum_flags, NULL);
-	if (retval != 0) {
-		kn_debug("mbuf_get_csum_requested returned error %d\n", retval);
-        goto FAILURE;
-	}
-    
-    iph = (struct ip*)pkt2_buf;
-    iph->ip_off = data_offset / 8;
-    iph->ip_len = htons(pkt2_len);
-    iph->ip_id  = htons(ip_id);
-    
-    mbuf_clear_csum_performed(*pkt2);
-    
-    csum_flags = 0;
-	csum_flags |= MBUF_CSUM_REQ_IP;
-	retval = mbuf_get_csum_requested(*pkt2, &csum_flags, NULL);
-	if (retval != 0) {
-		kn_debug("mbuf_get_csum_requested returned error %d\n", retval);
-        goto FAILURE;
-	}
-    
-    return 0;
-    
-FAILURE:
-    if (pkt1_allocated == TRUE)
-        mbuf_free(*pkt1);
-    if (pkt2_allocated == TRUE) 
-        mbuf_free(*pkt2);
-    return retval;
-}
+#include "utils.h"
 
 errno_t kn_inject_after_synack (mbuf_t incm_data)
 {
@@ -255,7 +128,17 @@ errno_t kn_inject_after_synack (mbuf_t incm_data)
 	if (retval != 0) {
 		return retval;
 	}
-	
+
+    retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, NULL, 0, outgoing_direction);
+	if (retval != 0) {
+		return retval;
+	}
+
+    retval = kn_inject_tcp_from_params(TH_ACK | TH_RST, saddr, daddr, sport, dport, seq, ack, NULL, 0, outgoing_direction);
+	if (retval != 0) {
+		return retval;
+	}
+    
 	return KERN_SUCCESS;
 }
 
@@ -291,51 +174,66 @@ errno_t kn_inject_after_http (mbuf_t otgn_data)
 }
 
 void kn_fulfill_ip_ranges()
-{
+{    
 	// Google
-	kn_append_ip_range_entry_default_ports(htonl(67305984), 24, ip_range_apply_kernet);   //	4.3.2.0/24
-	kn_append_ip_range_entry_default_ports(htonl(134623232), 24, ip_range_apply_kernet);  //	8.6.48.0/21
-	kn_append_ip_range_entry_default_ports(htonl(134743040), 24, ip_range_apply_kernet);  //	8.8.4.0/24
-	kn_append_ip_range_entry_default_ports(htonl(134744064), 24, ip_range_apply_kernet);  //	8.8.8.0/24
-	kn_append_ip_range_entry_default_ports(htonl(1078218752), 21, ip_range_apply_kernet); //	64.68.80.0/21
-	kn_append_ip_range_entry_default_ports(htonl(1078220800), 21, ip_range_apply_kernet); //	64.68.88.0/21
-	kn_append_ip_range_entry_default_ports(htonl(1089052672), 19, ip_range_apply_kernet); //	64.233.160.0/19
-	kn_append_ip_range_entry_default_ports(htonl(1113980928), 20, ip_range_apply_kernet); //	66.102.0.0/20
-	kn_append_ip_range_entry_default_ports(htonl(1123631104), 19, ip_range_apply_kernet); //	66.249.64.0/19
-	kn_append_ip_range_entry_default_ports(htonl(1208926208), 18, ip_range_apply_kernet); //	72.14.192.0/18
-	kn_append_ip_range_entry_default_ports(htonl(1249705984), 16, ip_range_apply_kernet); //	74.125.0.0/16
-	kn_append_ip_range_entry_default_ports(htonl(2915172352), 16, ip_range_apply_kernet); //	173.194.0.0/16
-	kn_append_ip_range_entry_default_ports(htonl(3512041472), 17, ip_range_apply_kernet); //	209.85.128.0/17
-	kn_append_ip_range_entry_default_ports(htonl(3639549952), 19, ip_range_apply_kernet); //	216.239.32.0/19
+	kn_append_ip_range_entry_default_ports(htonl(67305984), 24, ip_range_kernet_2);   //	4.3.2.0/24
+	kn_append_ip_range_entry_default_ports(htonl(134623232), 24, ip_range_kernet_2);  //	8.6.48.0/21
+	kn_append_ip_range_entry_default_ports(htonl(134743040), 24, ip_range_kernet_2);  //	8.8.4.0/24
+	kn_append_ip_range_entry_default_ports(htonl(134744064), 24, ip_range_kernet_2);  //	8.8.8.0/24
+	kn_append_ip_range_entry_default_ports(htonl(1078218752), 21, ip_range_kernet_2); //	64.68.80.0/21
+	kn_append_ip_range_entry_default_ports(htonl(1078220800), 21, ip_range_kernet_2); //	64.68.88.0/21
+	kn_append_ip_range_entry_default_ports(htonl(1089052672), 19, ip_range_kernet_2); //	64.233.160.0/19
+	kn_append_ip_range_entry_default_ports(htonl(1113980928), 20, ip_range_kernet_2); //	66.102.0.0/20
+	kn_append_ip_range_entry_default_ports(htonl(1123631104), 19, ip_range_kernet_2); //	66.249.64.0/19
+	kn_append_ip_range_entry_default_ports(htonl(1208926208), 18, ip_range_kernet_2); //	72.14.192.0/18
+	kn_append_ip_range_entry_default_ports(htonl(1249705984), 16, ip_range_kernet_2); //	74.125.0.0/16
+	kn_append_ip_range_entry_default_ports(htonl(2915172352), 16, ip_range_kernet_4); //	173.194.0.0/16
+    kn_append_readable_ip_range_entry_default_ports("208.117.224.0", 19, ip_range_kernet_4);
+	kn_append_ip_range_entry_default_ports(htonl(3512041472), 17, ip_range_kernet_2); //	209.85.128.0/17
+	kn_append_ip_range_entry_default_ports(htonl(3639549952), 19, ip_range_kernet_2); //	216.239.32.0/19
 	
 	// Wikipedia
-	kn_append_ip_range_entry_default_ports(htonl(3494942720), 22, ip_range_apply_kernet); //	208.80.152.0/22
-	
-	// Pornhub
-	kn_append_ip_range_entry_default_ports(htonl(2454899747), 32, ip_range_apply_kernet); //	146.82.204.35/32
+    kn_append_readable_ip_range_entry_default_ports("208.80.152.0", 22, ip_range_kernet_2);
 	
 	// Just-Ping
-	kn_append_ip_range_entry_default_ports(htonl(1161540560), 32, ip_range_apply_kernet);	//	69.59.179.208/32
+	kn_append_ip_range_entry_default_ports(htonl(1161540560), 32, ip_range_kernet_2);	//	69.59.179.208/32
 	
 	// Dropbox
-	kn_append_ip_range_entry_default_ports(htonl(3492530741), 32, ip_range_apply_kernet);	//	208.43.202.53/32
-	kn_append_ip_range_entry_default_ports(htonl(2921607977), 32, ip_range_apply_kernet);	//	174.36.51.41/32
-	
-	// Twitter
-	kn_append_ip_range_entry_default_ports(htonl(2163406116), 32, ip_range_apply_kernet); //	128.242.245.36/32
-    kn_append_ip_range_entry_default_ports(htonl(2916408726), 32, ip_range_apply_kernet); //     173.212.221.150/32
+	kn_append_readable_ip_range_entry_default_ports("199.47.216.0", 22, ip_range_kernet_2);
     
+    // Twitter
+    kn_append_readable_ip_range_entry_default_ports("199.59.148.0", 22, ip_range_kernet_4);  //199.59.148.0/22
+    
+    // Facebook
+    kn_append_readable_ip_range_entry_default_ports("69.63.176.0", 20, ip_range_kernet_3);
+    kn_append_readable_ip_range_entry_default_ports("69.171.224.0", 19, ip_range_kernet_3);      
+    
+    // Kenengba.com
+    kn_append_readable_ip_range_entry_default_ports("106.187.34.220", 32, ip_range_kernet_2);
+    
+    // 173.212.221.150
+    kn_append_readable_ip_range_entry_default_ports("173.212.221.150", 32, ip_range_kernet_3);
+
+    // *.wordpress.com
+    kn_append_readable_ip_range_entry_default_ports("74.200.243.251", 17, ip_range_kernet_3);
+    kn_append_readable_ip_range_entry_default_ports("76.74.254.123", 24, ip_range_kernet_3);
+    kn_append_readable_ip_range_entry_default_ports("72.233.69.6", 17, ip_range_kernet_3);
 }
 
+errno_t kn_append_readable_ip_range_entry_default_ports(const char* ip, u_int8_t netmask_bits, ip_range_policy policy)
+{
+    errno_t retval = 0;
+    u_int32_t addr = 0;
+    kn_inet_aton(ip, &addr);
 
-
-
-
-
-
-
-
-
+    retval = kn_append_ip_range_entry(addr, netmask_bits, htons(80), policy);
+    if (retval != 0)
+        return retval;
+    retval = kn_append_ip_range_entry(addr, netmask_bits, htons(443), policy);
+    if (retval != 0)
+        return retval;
+    return retval;
+}
 
 errno_t kn_tcp_pkt_from_params(mbuf_t *data, u_int8_t tcph_flags, u_int32_t iph_saddr, u_int32_t iph_daddr, u_int16_t tcph_sport, u_int16_t tcph_dport, u_int32_t tcph_seq, u_int32_t tcph_ack, const char* payload, size_t payload_len) 
 {
