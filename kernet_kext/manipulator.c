@@ -218,6 +218,8 @@ void kn_fulfill_ip_ranges()
     kn_append_readable_ip_range_entry_default_ports("74.200.243.251", 17, ip_range_kernet_3);
     kn_append_readable_ip_range_entry_default_ports("76.74.254.123", 24, ip_range_kernet_3);
     kn_append_readable_ip_range_entry_default_ports("72.233.69.6", 17, ip_range_kernet_3);
+    kn_append_readable_ip_range_entry_default_ports("93.184.220.20", 24, ip_range_kernet_3);
+    
 }
 
 errno_t kn_append_readable_ip_range_entry_default_ports(const char* ip, u_int8_t netmask_bits, ip_range_policy policy)

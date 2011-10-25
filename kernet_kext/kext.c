@@ -106,67 +106,6 @@ char* kn_inet_ntoa(u_int32_t ina)
 	return buf;
 }
 
-/* It's stupid to look over how kernel handles checksuming. I'll implement my own. 
- * Following code is grabbed from http://www.bloof.de/tcp_checksumming
- *
- */
-
-u_int16_t kn_tcp_sum_calc(u_int16_t len_tcp, u_int16_t src_addr[],u_int16_t dest_addr[], u_int16_t buff[])
-{
-    u_char prot_tcp=6;
-    u_int32_t sum;
-    int nleft;
-    u_int16_t *w;
-	
-    sum = 0;
-    nleft = len_tcp;
-    w=buff;
-	
-    /* calculate the checksum for the tcp header and payload */
-    while(nleft > 1)
-    {
-        sum += *w++;
-        nleft -= 2;
-    }
-	
-    /* if nleft is 1 there ist still on byte left. We add a padding byte (0xFF) to build a 16bit word */
-    if(nleft>0)
-    {
-    	/* sum += *w&0xFF; */
-		sum += *w&ntohs(0xFF00);   /* Thanks to Dalton */
-    }
-	
-    /* add the pseudo header */
-    sum += src_addr[0];
-    sum += src_addr[1];
-    sum += dest_addr[0];
-    sum += dest_addr[1];
-    sum += htons(len_tcp);
-    sum += htons(prot_tcp);
-	
-    // keep only the last 16 bits of the 32 bit calculated sum and add the carries
-    sum = (sum >> 16) + (sum & 0xFFFF);
-    sum += (sum >> 16);
-	
-    // Take the one's complement of sum
-    sum = ~sum;
-	
-	return ((u_int16_t) sum);
-}
-
-void kn_debug(const char *fmt, ...)
-{
-	va_list listp;
-	char log_buffer[256];
-	
-	va_start(listp, fmt);
-	
-	vsnprintf(log_buffer, sizeof(log_buffer), fmt, listp);
-	printf("kernet: %s", log_buffer);
-	
-	va_end(listp);
-}
-
 errno_t kn_prepend_mbuf_hdr(mbuf_t *data, size_t pkt_len)
 {
 	mbuf_t			new_hdr;
