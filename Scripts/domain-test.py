@@ -12,7 +12,7 @@ for d in domains:
     try:
         urllib2.urlopen("http://"+d, None, 10).read()
     except Exception, msg:
-        err = str(msg)
+        err = str(msg) + "\n"
         print d + ": " + err
         if err.find("reset") >= 0:
             reset.write(d+"\n")
