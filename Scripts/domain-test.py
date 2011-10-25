@@ -4,6 +4,7 @@ import urllib2
 import socket 
 
 domains = open("domain-list.txt", "r").read().split('\n')
+freed = open("freed.txt", "w")
 reset = open("reset.txt", "w")
 timeout = open("timeout.txt", "w")
 wtf = open("wtf.txt", "w")
@@ -11,6 +12,8 @@ wtf = open("wtf.txt", "w")
 for d in domains:
     try:
         urllib2.urlopen("http://"+d, None, 10).read()
+        freed.write(d+"\n")
+        freed.flush()
     except Exception, msg:
         err = str(msg) + "\n"
         print d + ": " + err
