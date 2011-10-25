@@ -13,7 +13,6 @@ if __name__ == "__main__":
     ipMap = {}
 
     for domain in domains:
-        d = domain.strip(".")
         try:
             ip = socket.gethostbyname(d)
         except:

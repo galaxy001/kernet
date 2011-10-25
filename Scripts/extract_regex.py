@@ -95,7 +95,7 @@ def printList(list):
             continue 
         if (line.find('\\') != -1):
             continue
-        print line
+        print line.strip(".")
         
 def main():
     #    fetchedList = fetchRules()
