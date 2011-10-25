@@ -12,7 +12,7 @@ if __name__ == "__main__":
     domains = open("domain-list.txt", "r").read().split('\n')
     ipMap = {}
 
-    for domain in domains:
+    for d in domains:
         try:
             ip = socket.gethostbyname(d)
         except:
