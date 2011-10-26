@@ -6,6 +6,7 @@ import urllib2
 import string
 import itertools
 import socket
+from operator import itemgetter, attrgetter
     
 if __name__ == "__main__":
     filename = "domain-list.txt"
@@ -60,4 +61,21 @@ if __name__ == "__main__":
             ipMap[ip] = 0
         ipMap[ip] += 1
 
-    print ipMap
+    #print ipMap
+    b24prefixCounter = {}
+    for ip in ipMap:
+        b24prefix = ip.rsplit('.', 1)[0]
+        if b24prefix not in b24prefixCounter:
+            b24prefixCounter[b24prefix] = 0 
+            
+        b24prefixCounter[b24prefix] += ipMap[ip]
+    ipList = []
+    for b24prefix in b24prefixCounter:
+        ipList.append([b24prefix, b24prefixCounter[b24prefix]])
+    print sorted(ipList, key=itemgetter(1))
+    ipList.reverse()
+
+    rangeList = []
+    for i in ipList:
+        rangeList.append(i[0])
+    print rangeList
