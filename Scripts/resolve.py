@@ -13,6 +13,7 @@ if __name__ == "__main__":
         filename = sys.argv[1]
 
     hosts = open("hosts", "r")
+
     ipMap = {}
     lines = hosts.read().split('\n')
     for l in lines:
@@ -23,11 +24,24 @@ if __name__ == "__main__":
     #print ipMap
     hosts.close()
 
+    dns_lost = open("no-dns-record.txt", "r")
+    badDomains = {}
+    lines = dns_lost.read().split('\n')
+    for l in lines:
+        if len(l) < 3:
+            continue
+        badDomains[l] = 1
+
     domains = open(filename, "r").read().split('\n')
     hosts = open("hosts", "a")
     for d in domains:
+        if len(d) < 3:
+            continue
         if (d in ipMap):
             continue
+        if (d in badDomains):
+            continue
+
         try:
             ip = socket.gethostbyname(d)
         except:
@@ -38,7 +52,4 @@ if __name__ == "__main__":
 
         print d + "\t" + ip
         ipMap[d] = ip
-
-    #hosts = open("hosts", "w")
-    print ipMap
 
