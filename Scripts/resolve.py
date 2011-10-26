@@ -8,11 +8,26 @@ import itertools
 import socket
     
 if __name__ == "__main__":
-    hosts = open("hosts", "w")
-    domains = open("domain-list.txt", "r").read().split('\n')
-    ipMap = {}
+    filename = "domain-list.txt"
+    if (len(sys.argv) > 1) :
+        filename = sys.argv[1]
 
+    hosts = open("hosts", "r")
+    ipMap = {}
+    lines = hosts.read().split('\n')
+    for l in lines:
+        if len(l) < 3:
+            continue
+        ip, addr = l.split('\t')
+        ipMap[addr] = ip
+    #print ipMap
+    hosts.close()
+
+    domains = open(filename, "r").read().split('\n')
+    hosts = open("hosts", "a")
     for d in domains:
+        if (d in ipMap):
+            continue
         try:
             ip = socket.gethostbyname(d)
         except:
@@ -22,10 +37,8 @@ if __name__ == "__main__":
         hosts.flush()
 
         print d + "\t" + ip
-        if (ip in ipMap):
-            ipMap[ip] += 1
-        else :
-            ipMap[ip] = 0
+        ipMap[d] = ip
 
+    #hosts = open("hosts", "w")
     print ipMap
 
