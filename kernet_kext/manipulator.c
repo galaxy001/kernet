@@ -200,13 +200,14 @@ void kn_fulfill_ip_ranges()
 	
 	// Dropbox
 	kn_append_readable_ip_range_entry_default_ports("199.47.216.0", 22, ip_range_kernet_2);
+	kn_append_readable_ip_range_entry_80_port("205.251.205.28", 24, ip_range_kernet_2);
     
     // Twitter
-    kn_append_readable_ip_range_entry_default_ports("199.59.148.0", 22, ip_range_kernet_4);  //199.59.148.0/22
+    kn_append_readable_ip_range_entry_80_port("199.59.148.0", 22, ip_range_kernet_4);  //199.59.148.0/22
     
     // Facebook
-    kn_append_readable_ip_range_entry_default_ports("69.63.176.0", 20, ip_range_kernet_3);
-    kn_append_readable_ip_range_entry_default_ports("69.171.224.0", 19, ip_range_kernet_3);      
+    kn_append_readable_ip_range_entry_80_port("69.63.176.0", 20, ip_range_kernet_3);
+    kn_append_readable_ip_range_entry_80_port("69.171.224.0", 19, ip_range_kernet_3);      
     
     // Kenengba.com
     kn_append_readable_ip_range_entry_default_ports("106.187.34.220", 32, ip_range_kernet_2);
@@ -234,6 +235,16 @@ errno_t kn_append_readable_ip_range_entry_default_ports(const char* ip, u_int8_t
     retval = kn_append_ip_range_entry(addr, netmask_bits, htons(443), policy);
     if (retval != 0)
         return retval;
+    return retval;
+}
+
+errno_t kn_append_readable_ip_range_entry_80_port(const char* ip, u_int8_t netmask_bits, ip_range_policy policy)
+{
+    errno_t retval = 0;
+    u_int32_t addr = 0;
+    kn_inet_aton(ip, &addr);
+
+    retval = kn_append_ip_range_entry(addr, netmask_bits, htons(80), policy);
     return retval;
 }
 

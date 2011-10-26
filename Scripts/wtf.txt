@@ -1,0 +1,85 @@
+1984bbs.com: <urlopen error [Errno 8] nodename nor servname provided, or not known>
+bcc.com.tw: <urlopen error [Errno 8] nodename nor servname provided, or not known>
+bot.nu: HTTP Error 401: Unauthorized
+ccc.de: <urlopen error [Errno 65] No route to host>
+dizhidizhi.com: <urlopen error [Errno 61] Connection refused>
+fan-qiang.com: <urlopen error [Errno 8] nodename nor servname provided, or not known>
+geocities.co.jp: <urlopen error [Errno 8] nodename nor servname provided, or not known>
+hecaitou.net: <urlopen error [Errno 65] No route to host>
+hkdailynews.com.hk: <urlopen error [Errno 8] nodename nor servname provided, or not known>
+ied2k.net: <urlopen error [Errno 61] Connection refused>
+knowledgerush.com: HTTP Error 403: Forbidden
+nch.com.tw: HTTP Error 403: Forbidden
+saiq.me: <urlopen error [Errno 8] nodename nor servname provided, or not known>
+songjianjun.com: HTTP Error 403: Forbidden
+yousendit.com: HTTP Error 301: The HTTP server returned a redirect error that would lead to an infinite loop.
+The last 30x error message was:
+Moved Permanently
+zoozle.net: IncompleteRead(0 bytes read)
+zuola.com: <urlopen error [Errno 65] No route to host>
+a.rimg.com.tw: HTTP Error 403: Forbidden
+about.aol.com: nonnumeric port: ''
+addictedtocoffee.de: <urlopen error [Errno 65] No route to host>
+asianwomensfilm.de: <urlopen error [Errno 65] No route to host>
+ccc.de: <urlopen error [Errno 65] No route to host>
+chinaphile.com: HTTP Error 500: Internal Server Error
+css.pixnet.in: HTTP Error 404: Not Found
+delcamp.net: <urlopen error [Errno 65] No route to host>
+demonoid.com: HTTP Error 404: Not Found
+dlsite.com: HTTP Error 403: Forbidden
+entermap.com: ''
+geometrictools.com: ''
+hecaitou.net: <urlopen error [Errno 65] No route to host>
+hugoroy.eu: <urlopen error [Errno 65] No route to host>
+internetpopculture.com: HTTP Error 403: Forbidden
+iphonix.fr: <urlopen error [Errno 65] No route to host>
+jgoodies.com: <urlopen error [Errno 65] No route to host>
+kevinrose.com: HTTP Error 404: Not Found
+keyfans.com: HTTP Error 404: Not Found
+lrfz.com: <urlopen error [Errno 61] Connection refused>
+mad-ar.ch: <urlopen error [Errno 65] No route to host>
+myeclipseide.com: HTTP Error 403: Forbidden
+po2b.com: HTTP Error 403: Forbidden
+qingre.com: HTTP Error 403: Forbidden
+refer.ccbill.com: HTTP Error 403: Forbidden
+s-a.cc: ''
+s.pixfs.net: HTTP Error 404: Not Found
+solozorro.tk: HTTP Error 403: Forbidden
+songjianjun.com: HTTP Error 403: Forbidden
+sshforwarding.com: HTTP Error 302: The HTTP server returned a redirect error that would lead to an infinite loop.
+The last 30x error message was:
+Found
+thesartorialist.com: IncompleteRead(0 bytes read)
+tkforum.tk: HTTP Error 403: Forbidden
+top1.pp.ru: HTTP Error 503: 
+tweetmylast.fm: HTTP Error 400: Bad Request
+xiaogaozi.org: HTTP Error 404: Not Found
+yousendit.com: HTTP Error 301: The HTTP server returned a redirect error that would lead to an infinite loop.
+The last 30x error message was:
+Moved Permanently
+yunchao.net: HTTP Error 503: Service Temporarily Unavailable
+zuola.com: <urlopen error [Errno 65] No route to host>
+a5.com.ru: <urlopen error [Errno 8] nodename nor servname provided, or not known>
+asdfg.jp: HTTP Error 403: Forbidden
+bbs2.newsgroup.la: HTTP Error 400: Bad Request
+bbs.newsgroup.la: HTTP Error 400: Bad Request
+caiting666.wordpress.com: HTTP Error 410: Gone
+dajusha.baywords.com: <urlopen error [Errno 61] Connection refused>
+homepage2.nifty.com: HTTP Error 403: Forbidden
+hotpot.hk: <urlopen error [Errno 65] No route to host>
+nc.alwaysdata.net: <urlopen error [Errno 65] No route to host>
+pdetails.com: HTTP Error 503: Service Unavailable
+psiphon.ca: <urlopen error [Errno 61] Connection refused>
+rti.org.tw: <urlopen error [Errno 8] nodename nor servname provided, or not known>
+s.xiaod.in: <urlopen error [Errno 61] Connection refused>
+share.ovi.com: HTTP Error 302: The HTTP server returned a redirect error that would lead to an infinite loop.
+The last 30x error message was:
+Moved Temporarily
+tuite.im: <urlopen error [Errno 65] No route to host>
+x.xcity.jp: <urlopen error [Errno 8] nodename nor servname provided, or not known>
+xh4n.cn: <urlopen error [Errno 8] nodename nor servname provided, or not known>
+xinshijue.com: <urlopen error [Errno 8] nodename nor servname provided, or not known>
+zh.wikibooks.org: HTTP Error 403: Forbidden
+zh.wikisource.org: HTTP Error 403: Forbidden
+zhonggtuotese.net: <urlopen error [Errno 8] nodename nor servname provided, or not known>
+: <urlopen error no host given>

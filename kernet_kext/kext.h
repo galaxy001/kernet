@@ -109,6 +109,7 @@ errno_t kn_append_ip_range_entry_default_ports(u_int32_t ip, u_int8_t prefix, ip
 errno_t kn_remove_ip_range_entry(u_int32_t ip, u_int8_t prefix, u_int16_t port);
 errno_t kn_remove_ip_range_entry_default_ports(u_int32_t ip, u_int8_t prefix);
 errno_t kn_append_readable_ip_range_entry_default_ports(const char* ip, u_int8_t netmask_bits, ip_range_policy policy);
+errno_t kn_append_readable_ip_range_entry_80_port(const char* ip, u_int8_t netmask_bits, ip_range_policy policy);
 void kn_fulfill_ip_ranges();
 
 // manipulator: 
