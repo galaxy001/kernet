@@ -41,6 +41,18 @@ def applyFilterToList(list):
             continue
         if line.startswith("[") or line.startswith("!"): # comments
             continue
+        if line.find("appspot") != -1:
+            continue
+        if line.find("google.") != -1:
+            continue
+        if line.find("wikipedia") != -1:
+            continue
+        if line.find('/') != -1:
+            line = line.split('/')[0]
+        if line.find('*') != -1:
+            continue
+        line = line.strip('@')
+        line = line.strip('|')
         retLines.append(line.strip())
     return retLines
 
@@ -98,12 +110,12 @@ def printList(list):
         print line.strip(".")
         
 def main():
-    #    fetchedList = fetchRules()
-    #moderatedLines = applyFilterToList(fetchedList)
+    fetchedList = fetchRules()
+    rules = applyFilterToList(fetchedList)
     # print moderatedLines
-    pac = fetchPac()
-    pac = applyFilterToPac(pac)
-    rules = extractPac(pac)
+    #pac = fetchPac()
+    #rules = applyFilterToPac(rules)
+    #rules = extractPac(pac)
     rules = sorted(set(rules))
     printList(rules)
     
