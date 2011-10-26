@@ -14,14 +14,14 @@ if __name__ == "__main__":
 
     hosts = open("hosts", "r")
 
-    ipMap = {}
+    ipCache = {}
     lines = hosts.read().split('\n')
     for l in lines:
         if len(l) < 3:
             continue
         ip, addr = l.split('\t')
-        ipMap[addr] = ip
-    #print ipMap
+        ipCache[addr] = ip
+    #print ipCache
     hosts.close()
 
     dns_lost = open("no-dns-record.txt", "r")
@@ -34,22 +34,30 @@ if __name__ == "__main__":
 
     domains = open(filename, "r").read().split('\n')
     hosts = open("hosts", "a")
+
+    ipMap = {} 
     for d in domains:
         if len(d) < 3:
             continue
-        if (d in ipMap):
-            continue
+        
         if (d in badDomains):
             continue
 
-        try:
-            ip = socket.gethostbyname(d)
-        except:
-            print '#unable to resolve ' + d
-            continue
-        hosts.write(ip + "\t" + d + "\n")
-        hosts.flush()
+        if (d in ipCache):
+            ip = ipCache[d]
+        else: 
+            try:
+                ip = socket.gethostbyname(d)
+            except:
+                print '#unable to resolve ' + d
+                continue
+            hosts.write(ip + "\t" + d + "\n")
+            hosts.flush()
+            ipCache[d] = ip
 
         print d + "\t" + ip
-        ipMap[d] = ip
+        if ip not in ipMap:
+            ipMap[ip] = 0
+        ipMap[ip] += 1
 
+    print ipMap
