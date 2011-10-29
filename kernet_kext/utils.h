@@ -27,8 +27,8 @@
 #define IN_RANGE(i, min, max) (i < min) || (i > max) ? 1 : 0
 #define CAST_PTR_INT(X) (*((int*)(X)))
 
-//char* kn_inet_ntoa_simple(u_int32_t ina);
-//char* kn_inet_ntoa(u_int32_t ina, char* buf);
+char* kn_inet_ntoa_simple(u_int32_t ina);
+char* kn_inet_ntoa(u_int32_t ina, char* buf);
 int kn_inet_aton(const char *cp, u_int32_t *addr);
 void kn_debug(const char *fmt, ...);
 void kn_msleep(u_int32_t milliseconds, char *channel, char *msg);

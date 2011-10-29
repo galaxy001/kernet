@@ -7,6 +7,9 @@
 #define ETHHDR_LEN 14
 #define MIN_HTTP_REQUEST_LEN 14
 #define kMY_TAG_TYPE 1
+
+#define READABLE_IPv4_LENGTH 4*sizeof"123"
+
 #define CTL_MAGIC_WORD 0x012A7715
 
 #define CTL_OPT_APPEND_IP_RANGE 0x10
@@ -33,14 +36,14 @@ struct request_t {
 
 struct append_ip_range_req_t {
     u_int32_t ip;
-    u_int8_t prefix;
+    u_int8_t netmask_bits;
     u_int16_t port; 
     u_int8_t policy;
 }; // should in network byte order
 
 struct remove_ip_range_req_t {
     u_int32_t ip;
-    u_int8_t prefix;
+    u_int8_t netmask_bits;
     u_int16_t port; 
 };
 
@@ -50,5 +53,14 @@ struct response_t {
     u_int8_t opt_code;
     u_int32_t status;
 };
+
+typedef enum _ip_range_policy {
+	ip_range_direct = 0, 
+    ip_range_kernet_1 = 1,
+    ip_range_kernet_2 = 2,
+    ip_range_kernet_3 = 3,
+    ip_range_kernet_4 = 4,
+    ip_range_kernet_experiment = 100,
+} ip_range_policy;
 
 #endif /* COMMON_H */

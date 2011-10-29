@@ -12,7 +12,6 @@
 #include <netinet/in.h>
 
 /* As a matter of fact, I don't even bother to search for existing inet_ntoa in kernel space. I copied the following from freeBSD, I'm realy a bitch huh? */ 
-/*
 char* kn_inet_ntoa_simple(u_int32_t ina) 
 {
 	static char buf[READABLE_IPv4_LENGTH];
@@ -26,7 +25,6 @@ char* kn_inet_ntoa(u_int32_t ina, char* buf) {
 	snprintf(buf, READABLE_IPv4_LENGTH, "%d.%d.%d.%d", ucp[0] & 0xff, ucp[1] & 0xff, ucp[2] & 0xff, ucp[3] & 0xff);
     return buf;
 }
-*/
 
 void kn_msleep(u_int32_t milliseconds, char *channel, char *msg)
 {
