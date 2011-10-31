@@ -52,8 +52,17 @@ def applyFilterToList(list):
         if line.find('*') != -1:
             continue
         line = line.strip('@')
-        line = line.strip('|')
-        retLines.append(line.strip())
+        line = line.strip('|').strip()
+
+        line = string.replace(line, '\.', '.')
+        line = string.replace(line, '\-', '-')
+        if (line.find('?') != -1):
+            line = line.rsplit('?')[-1]
+        if (line.find('.') == -1):
+            continue 
+        if (line.find('\\') != -1):
+            continue
+        retLines.append(line.strip("."))
     return retLines
 
 def applyFilterToPac(pac):
@@ -95,20 +104,6 @@ def extractPac(pac):
         ret.append(l)
     return ret
 
-def printList(list):
-    line_ctr = 0
-    for line in list:
-        line_ctr = line_ctr + 1
-        line = string.replace(line, '\.', '.')
-        line = string.replace(line, '\-', '-')
-        if (line.find('?') != -1):
-            line = line.rsplit('?')[-1]
-        if (line.find('.') == -1):
-            continue 
-        if (line.find('\\') != -1):
-            continue
-        print line.strip(".")
-        
 def main():
     fetchedList = fetchRules()
     rules = applyFilterToList(fetchedList)
@@ -117,7 +112,8 @@ def main():
     #rules = applyFilterToPac(rules)
     #rules = extractPac(pac)
     rules = sorted(set(rules))
-    printList(rules)
+    for line in rules:
+        print line
     
 if __name__ == "__main__":
     main()
