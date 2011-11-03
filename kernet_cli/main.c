@@ -34,8 +34,8 @@ void append_ip_range(const char* ip, int prefix, int port)
     
     opt_req = (struct append_ip_range_req_t*)(buf + sizeof(struct request_t));
     opt_req->ip = addr.s_addr;
-    opt_req->prefix = prefix;
-    opt_req->policy = IP_RANGE_POLICY_APPLY;
+    opt_req->netmask_bits = prefix;
+    opt_req->policy = ip_range_kernet_2;
     opt_req->port = htons(port);
     
     if (send(gSocket, buf, sizeof(struct request_t) + sizeof(struct append_ip_range_req_t), 0) < 0) {
