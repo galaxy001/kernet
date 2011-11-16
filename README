@@ -2,3 +2,10 @@
 西厢计划 MacOSX 移植版: http://liruqi.wordpress.com/2011/10/29/west-chamber-macosx-port/
 
 Donate for this project: my paypal account is liruqi@gmail.com
+
+Update:
+
+2011-12-16: 
+最近出国的网络延迟比较大( https://twitter.com/#!/jason5ng32/status/136284220984279041 ), 直接影响到kernet 可用性。
+建议大家直接改 hosts 文件，或者自建dns 服务器。
+我个人维护了一份 hosts 文件( https://raw.github.com/liruqi/kernet/stable/kerdns/hosts ) 以及 dnsmasq 配置文件 (https://raw.github.com/liruqi/kernet/stable/kerdns/dnsmasq.conf)
