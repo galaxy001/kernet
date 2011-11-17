@@ -481,7 +481,6 @@ void kn_fulfill_ip_ranges()
     kn_append_readable_ip_range_entry_default_ports("76.74.254.123", 24, ip_range_kernet_2);
     kn_append_readable_ip_range_entry_default_ports("72.233.69.6", 17, ip_range_kernet_2);
     kn_append_readable_ip_range_entry_default_ports("93.184.220.20", 24, ip_range_kernet_2);
-    kn_append_readable_ip_range_entry_default_ports("68.232.44.0", 24, ip_range_kernet_2);
     
     for(i=sizeof(prefix)/sizeof(prefix[0])-1; i>=0; i-=1) {
         size_t len = strlen(prefix[i]);
