@@ -1,3 +1,4 @@
+xcodebuild -target kernet_kext -arch "i386 x86_64" -configuration Release
 sudo mkdir /tmp/kext
-sudo cp -R /Users/chen/Dropbox/src/kernet/build/Debug/kernet.kext /tmp/kext
-sudo cp -R /Users/chen/Dropbox/src/kernet/StartupItem /tmp/
+sudo cp -R build/Release/kernet.kext /tmp/kext
+sudo cp -R StartupItem /tmp/
